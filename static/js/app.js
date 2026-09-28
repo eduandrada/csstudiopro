@@ -666,16 +666,17 @@ function updatePathUI(data) {
     const text = document.getElementById('statusText');
     const preview = document.getElementById('pathPreview');
     const versionBadge = document.getElementById('statusVersionBadge');
+    const displayPath = data.client_path || data.path;
 
     if (data.connected && data.path) {
         led.className = "status-led online";
-        text.textContent = "Conectado a CS 1.6";
-        preview.textContent = data.path;
-        preview.title = data.path;
+        text.textContent = data.is_cloud_mode ? "Modo Cloud (Nube)" : "Conectado a CS 1.6";
+        preview.textContent = displayPath;
+        preview.title = displayPath;
 
         if (versionBadge && data.version_type) {
             versionBadge.style.display = 'inline-flex';
-            versionBadge.className = 'version-badge ' + (data.is_steam ? 'steam' : 'nosteam');
+            versionBadge.className = 'version-badge ' + (data.is_cloud_mode ? 'cloud' : (data.is_steam ? 'steam' : 'nosteam'));
             versionBadge.textContent = data.version_type.toUpperCase();
         }
     } else {
@@ -721,8 +722,8 @@ function updatePathUI(data) {
         });
     }
 
-    if (data.path && document.getElementById('manualPathInput')) {
-        document.getElementById('manualPathInput').value = data.path;
+    if (displayPath && document.getElementById('manualPathInput')) {
+        document.getElementById('manualPathInput').value = displayPath;
     }
 }
 
@@ -748,7 +749,8 @@ async function saveManualPath() {
         if (data.success) {
             updatePathUI(data.status);
             closePathModal();
-            showToast("¡Ruta de Counter-Strike 1.6 guardada con éxito!");
+            const isCloud = data.status?.is_cloud_mode;
+            showToast(isCloud ? "¡Ruta configurada en Modo Cloud! Archivos listos para generar y descargar." : "¡Ruta de Counter-Strike 1.6 guardada con éxito!");
         } else {
             alert(data.error || "Ruta no válida. Asegúrate de seleccionar la carpeta cstrike/ o la raíz de Half-Life.");
         }

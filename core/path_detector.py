@@ -43,6 +43,22 @@ class PathDetector:
         self.cached_path = None
         self._load_saved_path()
 
+    def _ensure_cloud_sandbox(self) -> str:
+        """Crea un entorno sandbox en el servidor para permitir operaciones completas en la nube (Render)."""
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sandbox_dir = os.path.join(base_dir, "data", "cloud_cstrike")
+        for sub in ["models/player/leet", "sound/weapons", "sprites", "resource", "maps", "cl_dlls"]:
+            os.makedirs(os.path.join(sandbox_dir, sub), exist_ok=True)
+        # Archivo testigo de cstrike
+        info_file = os.path.join(sandbox_dir, "gameinfo.txt")
+        if not os.path.exists(info_file):
+            try:
+                with open(info_file, "w", encoding="utf-8") as f:
+                    f.write("// CSStudioPro Cloud Sandbox Mode\n")
+            except Exception:
+                pass
+        return sandbox_dir
+
     def _load_saved_path(self):
         path_to_read = SETTINGS_FILE if os.path.exists(SETTINGS_FILE) else os.path.join(os.path.dirname(os.path.dirname(__file__)), "studio_settings.json")
         if os.path.exists(path_to_read):
@@ -51,13 +67,18 @@ class PathDetector:
                     data = json.load(f)
                     saved = data.get("cstrike_path")
                     if saved and self.is_valid_cstrike(saved):
-                        self.cached_path = os.path.abspath(saved)
+                        self.cached_path = os.path.abspath(saved) if os.path.isdir(saved) else self._ensure_cloud_sandbox()
             except Exception:
                 pass
 
     def save_path(self, path):
-        if self.is_valid_cstrike(path):
-            self.cached_path = os.path.abspath(path)
+        clean_p = (path or "").strip()
+        if not clean_p:
+            return False
+
+        # Si existe físicamente en el host
+        if self.is_valid_cstrike(clean_p) and os.path.isdir(clean_p):
+            self.cached_path = os.path.abspath(clean_p)
             try:
                 data = {}
                 if os.path.exists(SETTINGS_FILE):
@@ -67,35 +88,67 @@ class PathDetector:
                     except Exception:
                         data = {}
                 data["cstrike_path"] = self.cached_path
+                data["client_path"] = self.cached_path
                 with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=4)
                 return True
             except Exception:
                 return False
+
+        # Si estamos en servidor Cloud / Linux (Render) y el usuario ingresó una ruta Windows
+        p_lower = clean_p.replace("\\", "/").lower()
+        is_cloud = (sys.platform != "win32") or bool(os.environ.get("RENDER"))
+        if is_cloud and any(k in p_lower for k in ["cstrike", "half-life", "counter-strike", "cs 1.6", "cs16"]):
+            sandbox_path = self._ensure_cloud_sandbox()
+            self.cached_path = sandbox_path
+            try:
+                data = {}
+                if os.path.exists(SETTINGS_FILE):
+                    try:
+                        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    except Exception:
+                        data = {}
+                data["cstrike_path"] = sandbox_path
+                data["client_path"] = clean_p
+                data["is_cloud_sandbox"] = True
+                with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+                return True
+            except Exception:
+                return False
+
         return False
 
     def is_valid_cstrike(self, path):
         """Verifica si la ruta dada es un directorio cstrike válido o la raíz de Half-Life."""
-        if not path or not os.path.isdir(path):
+        if not path:
             return False
 
-        norm = os.path.abspath(path)
-        base = os.path.basename(norm).lower()
+        if os.path.isdir(path):
+            norm = os.path.abspath(path)
+            base = os.path.basename(norm).lower()
 
-        # Si apuntó a la raíz de Half-Life
-        if base in ("half-life", "counter-strike", "counter-strike 1.6", "cs 1.6"):
-            cstrike_sub = os.path.join(norm, "cstrike")
-            if os.path.isdir(cstrike_sub):
-                return True
+            # Si apuntó a la raíz de Half-Life
+            if base in ("half-life", "counter-strike", "counter-strike 1.6", "cs 1.6"):
+                cstrike_sub = os.path.join(norm, "cstrike")
+                if os.path.isdir(cstrike_sub):
+                    return True
 
-        # Si apuntó directamente a cstrike o cstrike_spanish
-        if "cstrike" in base:
-            # Comprobar indicadores típicos de cstrike (subcarpetas o archivos)
-            indicators = ["models", "sound", "sprites", "resource", "cl_dlls", "maps", "tempdecal.wad", "gameinfo.txt"]
-            score = sum(1 for ind in indicators if os.path.exists(os.path.join(norm, ind)))
-            hl_exe_near = os.path.exists(os.path.join(os.path.dirname(norm), "hl.exe"))
-            if score >= 2 or hl_exe_near:
-                return True
+            # Si apuntó directamente a cstrike o cstrike_spanish
+            if "cstrike" in base:
+                indicators = ["models", "sound", "sprites", "resource", "cl_dlls", "maps", "tempdecal.wad", "gameinfo.txt"]
+                score = sum(1 for ind in indicators if os.path.exists(os.path.join(norm, ind)))
+                hl_exe_near = os.path.exists(os.path.join(os.path.dirname(norm), "hl.exe"))
+                if score >= 2 or hl_exe_near:
+                    return True
+            return False
+
+        # Entorno Cloud / Render fallback
+        p_lower = str(path).replace("\\", "/").lower().strip()
+        is_cloud = (sys.platform != "win32") or bool(os.environ.get("RENDER"))
+        if is_cloud and any(k in p_lower for k in ["cstrike", "half-life", "counter-strike", "cs 1.6", "cs16"]):
+            return True
 
         return False
 
@@ -103,12 +156,15 @@ class PathDetector:
         """Resuelve la ruta definitiva a la carpeta cstrike/."""
         if not path:
             return None
-        norm = os.path.abspath(path)
-        if os.path.isdir(os.path.join(norm, "cstrike")):
-            return os.path.join(norm, "cstrike")
-        if os.path.isdir(os.path.join(norm, "cstrike_spanish")):
-            return os.path.join(norm, "cstrike_spanish")
-        return norm
+        if os.path.isdir(path):
+            norm = os.path.abspath(path)
+            if os.path.isdir(os.path.join(norm, "cstrike")):
+                return os.path.join(norm, "cstrike")
+            if os.path.isdir(os.path.join(norm, "cstrike_spanish")):
+                return os.path.join(norm, "cstrike_spanish")
+            return norm
+        # En modo cloud, retornar sandbox
+        return self._ensure_cloud_sandbox()
 
     def scan_windows_registry(self):
         """Lee el registro de Windows buscando rutas de Steam y No-Steam (Half-Life / Counter-Strike)."""
@@ -312,13 +368,27 @@ class PathDetector:
                 for c in candidates
             ]
 
+            client_display_path = active
+            is_cloud_sandbox = False
+            if os.path.exists(SETTINGS_FILE):
+                try:
+                    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                        s_data = json.load(f)
+                        if s_data.get("client_path"):
+                            client_display_path = s_data["client_path"]
+                        is_cloud_sandbox = bool(s_data.get("is_cloud_sandbox", False))
+                except Exception:
+                    pass
+
             return {
                 "connected": True,
                 "path": active,
+                "client_path": client_display_path,
+                "is_cloud_mode": is_cloud_sandbox,
                 "hl_root": hl_root,
-                "has_hl_exe": has_exe,
+                "has_hl_exe": has_exe or is_cloud_sandbox,
                 "direct_exe": hl_exe if has_exe else None,
-                "version_type": version_type,
+                "version_type": "Cloud Sandbox (Steam/No-Steam)" if is_cloud_sandbox else version_type,
                 "is_steam": is_steam,
                 "is_spanish": "spanish" in os.path.basename(active).lower(),
                 "subfolders": subfolders,
