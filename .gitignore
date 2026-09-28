@@ -1,0 +1,32 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# PyInstaller & Build artifacts
+build/
+dist/
+Output_Installer/
+*.spec
+*.zip
+
+# Entorno y Secretos locales
+.env
+.env.local
+*.log
+logs/
+data/
+
+# Windows & OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

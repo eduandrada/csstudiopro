@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 1.6 Modding, Tuning & Audio Studio Pro | GoldSrc Suite</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=2.2">
+</head>
+<body>
+    <!-- HEADER Y BARRA DE ESTADO SUPERIOR -->
+    <header class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            </div>
+            <div class="brand-text">
+                <h1>CS 1.6 <span>STUDIO PRO</span></h1>
+                <p>Estación Definitiva de Modding, Netcode y Audio GoldSrc</p>
+            </div>
+        </div>
+
+        <div class="nav-status-group">
+            <!-- Indicador LED de Conexión y Versión Steam/No-Steam -->
+            <div class="connection-pill" id="connPill" onclick="openPathModal()" title="Haz clic para cambiar ruta o versión">
+                <span class="status-led" id="statusLed"></span>
+                <span class="status-text" id="statusText">Buscando cstrike...</span>
+                <span class="version-badge nosteam" id="statusVersionBadge" style="display:none;">NO-STEAM</span>
+                <span class="path-preview" id="pathPreview">Detectando...</span>
+            </div>
+
+            <!-- Botón de Historial de Snapshots -->
+            <button class="nav-btn-icon" onclick="switchTab('snapshots')" title="Historial de Respaldos">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="15"/></svg>
+                <span class="badge-count" id="backupCount">0</span>
+            </button>
+
+            <!-- Botón Demo Pantalla de Carga Táctica AK-47 -->
+            <button class="nav-btn-icon" onclick="LoadingOverlay.simulateDemo()" title="Probar Pantalla de Carga Táctica (Gold AK-47)" style="color:var(--accent-fire); border-color:rgba(255,106,0,0.4);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
+            </button>
+
+            <!-- Botón Créditos del Proyecto (yuyito, Hidden /A/, KYAMI, vANS) -->
+            <button class="nav-btn-icon" onclick="openCreditsModal()" title="Créditos del Proyecto" style="color:var(--accent); border-color:rgba(245,166,35,0.4);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+
+            <!-- Usuario Activo y Salir -->
+            <div class="connection-pill" style="cursor:default; padding: 4px 10px;" title="Sesión Segura Activa">
+                <span class="status-led" style="background:#2ed573; box-shadow:0 0 6px #2ed573;"></span>
+                <span class="status-text" id="headerUserName" style="font-weight:700; color:#fff;">cstrike</span>
+            </div>
+            <a href="/api/auth/logout" class="nav-btn-icon" title="Cerrar Sesión Segura" style="color:#ff6b81; border-color:rgba(255,71,87,0.4); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+
+            <!-- Lanzar Juego -->
+            <button class="nav-btn-launch" id="quickLaunchBtn" onclick="launchGameQuick()" title="Lanzar Counter-Strike 1.6 (Steam o No-Steam)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>JUGAR CS 1.6</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- NAVEGACIÓN POR MÓDULOS -->
+        <!-- NAVEGACIÓN PRINCIPAL UNIFICADA -->
+    <nav class="main-tabs">
+        <button class="tab-link active" data-tab="converters">
+            <span class="tab-icon">🎨</span> Conversores & VGUI
+        </button>
+        <button class="tab-link" data-tab="configsuite">
+            <span class="tab-icon">⚙️</span> Binds & Configuración
+        </button>
+        <button class="tab-link" data-tab="assets">
+            <span class="tab-icon">📦</span> Gestor de Assets
+        </button>
+        <button class="tab-link" data-tab="launcher-ia">
+            <span class="tab-icon">🚀</span> Lanzador IA
+        </button>
+        <button class="tab-link" data-tab="snapshots">
+            <span class="tab-icon">🛡️</span> Snapshots & Rollback
+        </button>
+    </nav>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="main-content">
+        <!-- ============================================================= -->
+        <!-- MÓDULO UNIFICADO 1: CONVERSORES & VGUI (WAD3, AUDIO, GAMEMENU) -->
+        <!-- ============================================================= -->
+        <section class="tab-pane active" id="tab-converters">
+            <!-- Barra de Sub-Navegación del Módulo -->
+            <div class="module-subtabs-nav">
+                <button class="mod-subtab-btn active" data-modtab="conv-spray">
+                    🎯 Grafitis WAD3 (tempdecal.wad)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="conv-audio">
+                    🔊 Audio GoldWave (WAV 8-Bit)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="conv-vgui">
+                    📋 GameMenu VGUI (GameMenu.res)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="conv-demomp4">
+                    🎬 Demos a MP4 (.dem)
+                </button>
+            </div>
+
+            <!-- Subsección 1: Grafitis WAD3 -->
+            <div class="mod-subpane active" id="modpane-conv-spray">
+
+            <div class="module-header">
+                <h2>🎯 Compilador Binario WAD3 (tempdecal.wad & pldecal.wad)</h2>
+                <p>Genera grafitis para GoldSrc con escalado a múltiplos de 16, límite estricto de 11.200 px, 4 mipmaps Miptex, slot 255 transparente e inyección directa con atributo Solo Lectura.</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <!-- Columna Izquierda: Carga y Opciones -->
+                <div class="card">
+                    <div class="card-subtitle">Imagen de Origen</div>
+                    <div class="dropzone" id="sprayDropzone">
+                        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <div class="drop-title" id="sprayDropText">Arrastra una imagen o haz clic</div>
+                        <div class="drop-desc">Soporta PNG con alfa, JPG, WEBP, BMP. O presiona <b>Ctrl+V</b></div>
+                        <input type="file" id="sprayFileInput" accept="image/*" style="display:none;">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Resolución Objetivo (Máx 11.200 px)</label>
+                        <select id="sprayPreset">
+                            <option value="auto" selected>✨ Automático Óptimo (Mantiene proporción + Mayor calidad)</option>
+                            <option value="112x96">112 × 96 px (10.752 px - Clásico Máx Horizontal 1.16:1)</option>
+                            <option value="96x112">96 × 112 px (10.752 px - Clásico Máx Vertical 1:1.16)</option>
+                            <option value="96x96">96 × 96 px (9.216 px - Cuadrado 1:1)</option>
+                            <option value="128x80">128 × 80 px (10.240 px - Panorámico 16:10)</option>
+                            <option value="160x64">160 × 64 px (10.240 px - Panorámico 2.5:1)</option>
+                            <option value="144x64">144 × 64 px (9.216 px - Panorámico 2.25:1)</option>
+                            <option value="80x128">80 × 128 px (10.240 px - Retrato 10:16)</option>
+                            <option value="64x160">64 × 160 px (10.240 px - Banner Vertical)</option>
+                            <option value="custom">⚙️ Personalizado (Múltiplos de 16)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-2col" id="sprayCustomDimRow" style="display:none;">
+                        <div>
+                            <label>Ancho (W)</label>
+                            <input type="number" id="sprayCustomW" value="112" min="16" max="688" step="16">
+                        </div>
+                        <div>
+                            <label>Alto (H)</label>
+                            <input type="number" id="sprayCustomH" value="96" min="16" max="688" step="16">
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Modo de Transparencia (Máscara Slot 255)</label>
+                        <select id="sprayAlphaMode">
+                            <option value="alpha" selected>🔍 Automática por Canal Alfa (PNG/WEBP)</option>
+                            <option value="white">⚪ Quitar Fondo Blanco (Para logos JPG)</option>
+                            <option value="black">⚫ Quitar Fondo Negro (Para logos oscuros)</option>
+                            <option value="custom">🎨 Color Específico (Cuentagotas)</option>
+                            <option value="none">🚫 Sin Transparencia (Opaco)</option>
+                        </select>
+                    </div>
+
+                    <div id="sprayCustomColorRow" style="display:none;" class="control-row">
+                        <label>Color de Fondo a Volver Transparente</label>
+                        <div class="inline-color-picker">
+                            <input type="color" id="sprayKeyColor" value="#000000">
+                            <span class="hint">O haz clic sobre la vista previa</span>
+                        </div>
+                    </div>
+
+                    <div class="control-row" id="sprayTolRow" style="display:none;">
+                        <div class="label-with-val">
+                            <span>Tolerancia de Color</span>
+                            <span class="val-badge" id="sprayTolVal">30%</span>
+                        </div>
+                        <input type="range" id="sprayTolSlider" min="1" max="95" value="30">
+                    </div>
+
+                    <div class="control-row" id="sprayAlphaThreshRow">
+                        <div class="label-with-val">
+                            <span>Umbral de Corte Alfa</span>
+                            <span class="val-badge" id="sprayAlphaThreshVal">128</span>
+                        </div>
+                        <input type="range" id="sprayAlphaThreshSlider" min="1" max="254" value="128">
+                    </div>
+
+                    <div class="grid-2col">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="sprayDither">
+                            <span>Tramado (Dithering)</span>
+                        </label>
+                        <select id="sprayLumpType">
+                            <option value="0x40" selected>Tipo 0x40 (TYP_DECAL - Estándar)</option>
+                            <option value="0x43">Tipo 0x43 (TYP_MIPTEX)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Vista Previa y Acciones -->
+                <div class="card">
+                    <div class="subtabs-bar">
+                        <button class="subtab-btn active" data-subtab="spray-wall">Simulador Pared CS 1.6</button>
+                        <button class="subtab-btn" data-subtab="spray-checker">Damero Transparente</button>
+                        <button class="subtab-btn" data-subtab="spray-palette">Paleta 256 Slots</button>
+                    </div>
+
+                    <!-- Vista Pared de_dust2 -->
+                    <div class="subtab-pane active" id="subpane-spray-wall">
+                        <canvas id="sprayWallCanvas" width="440" height="280"></canvas>
+                    </div>
+
+                    <!-- Vista Damero -->
+                    <div class="subtab-pane" id="subpane-spray-checker">
+                        <div class="checker-wrapper">
+                            <canvas id="sprayPreviewCanvas" width="112" height="96"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Vista Paleta -->
+                    <div class="subtab-pane" id="subpane-spray-palette">
+                        <div class="palette-container" id="sprayPaletteGrid"></div>
+                        <div class="palette-caption">
+                            <span>Slots 0-254: Colores visibles</span>
+                            <span class="slot-255-caption">Slot 255: Azul Transparente (#0000FF)</span>
+                        </div>
+                    </div>
+
+                    <!-- Métricas -->
+                    <div class="metrics-bar">
+                        <div class="metric-line">
+                            <span>Presupuesto GoldSrc:</span>
+                            <strong id="sprayPixelCounter">0 / 11.200 px (0.0%)</strong>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="sprayProgressBar"></div>
+                        </div>
+                        <div class="metrics-detail">
+                            <div><span>Resolución:</span> <b id="sprayResLabel">0 × 0</b></div>
+                            <div><span>Visibles:</span> <b id="sprayVisLabel">-</b></div>
+                            <div><span>Transparentes:</span> <b id="sprayTranspLabel">-</b></div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" id="sprayInstallBtn" onclick="installSprayDirect()" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>INSTALAR DIRECTO EN CS 1.6 (+R)</span>
+                        </button>
+                        <button class="btn-secondary" id="sprayDownloadBtn" onclick="downloadSprayWad()" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Descargar tempdecal.wad
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 2: Audio GoldWave -->
+            <div class="mod-subpane" id="modpane-conv-audio">
+
+            <div class="module-header">
+                <h2>🔊 Procesador y Conversor Acústico estilo GoldWave</h2>
+                <p>Convierte cualquier audio (WAV, MP3, OGG, FLAC) al estándar estricto de GoldSrc: 16-bit PCM, 22050 Hz / 11025 Hz, Canal Mono con normalización de volumen y prevención de saturación (+0dB).</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <div class="card">
+                    <div class="card-subtitle">Importar Sonido o Pista</div>
+                    <div class="dropzone" id="audioDropzone">
+                        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        <div class="drop-title" id="audioDropText">Arrastra un audio o haz clic</div>
+                        <div class="drop-desc">Soporta MP4 (Video/Audio), MP3, WAV, OGG, FLAC, M4A</div>
+                        <input type="file" id="audioFileInput" accept="audio/*,video/mp4,video/*,.mp4,.m4a,.mp3,.wav,.ogg,.flac,.aac" style="display:none;">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Perfil Oficial del Motor GoldSrc</label>
+                        <select id="audioProfile">
+                            <option value="weapons" selected>🔫 Disparos y Armas (22.050 Hz, 16-bit Mono, sound/weapons/)</option>
+                            <option value="radio">📻 Mensajes de Radio Clásica (11.025 Hz, 16-bit Mono, sound/radio/)</option>
+                            <option value="voice">🎙️ Micrófono HLDJ / Voice Input (11.025 Hz, 16-bit Mono, voice_input.wav)</option>
+                            <option value="music">🎵 Música de Inicio de Menú (44.100 Hz, MP3 Estéreo, media/gamestartup.mp3)</option>
+                            <option value="custom">⚙️ Sonido Personalizado en Subcarpeta</option>
+                        </select>
+                    </div>
+
+                    <div class="control-row" id="audioSubpathRow">
+                        <label>Destino dentro de cstrike/</label>
+                        <input type="text" id="audioCustomDest" value="sound/weapons/ak47-1.wav" placeholder="ej: sound/weapons/deagle-1.wav">
+                    </div>
+
+                    <div class="control-row">
+                        <div class="label-with-val">
+                            <span>Amplificación / Volumen</span>
+                            <span class="val-badge" id="audioVolVal">100%</span>
+                        </div>
+                        <input type="range" id="audioVolSlider" min="50" max="200" value="100">
+                    </div>
+
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="audioNormalize" checked>
+                        <span>Normalización de Pico (-0.8 dB) para evitar saturación</span>
+                    </label>
+                </div>
+
+                <div class="card">
+                    <div class="card-subtitle">Reproductor y Verificación Acústica</div>
+                    
+                    <div class="audio-player-box">
+                        <div class="audio-info" id="audioFileInfo">
+                            Ningún audio cargado aún.
+                        </div>
+
+                        <!-- Reproductor HTML5 -->
+                        <audio id="audioPreviewPlayer" controls style="width: 100%; margin-top: 14px; display: none;"></audio>
+
+                        <div class="specs-box" id="audioSpecsBox" style="display:none;">
+                            <div class="spec-item">
+                                <span class="spec-label">Frecuencia:</span>
+                                <strong id="specRate">22.050 Hz</strong>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Canales:</span>
+                                <strong id="specChannels">1 (Mono)</strong>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Profundidad:</span>
+                                <strong>16-bit PCM</strong>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Duración:</span>
+                                <strong id="specDuration">0.0s</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" id="audioInstallBtn" onclick="installAudioDirect()" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>CONVERTIR E INSTALAR EN CSTRIKE</span>
+                        </button>
+                        <button class="btn-secondary" id="audioDownloadBtn" onclick="downloadAudioWav()" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Descargar WAV (GoldSrc)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 3: GameMenu VGUI -->
+            <div class="mod-subpane" id="modpane-conv-vgui">
+
+            <div class="module-header">
+                <h2>📋 Editor Visual de VGUI y GameMenu (resource/GameMenu.res)</h2>
+                <p>Personaliza los botones del menú de inicio de Counter-Strike 1.6: atajos para conectarte a tu servidor favorito, reconectar automáticamente, detener sonidos bugeados o ver demos.</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <div class="card">
+                    <div class="card-subtitle">Botones del Menú Principal</div>
+                    <div class="gamemenu-list" id="gameMenuList"></div>
+
+                    <button class="btn-secondary" onclick="addGameMenuItem()" style="margin-top: 12px; width: 100%;">
+                        ➕ Añadir Nuevo Botón
+                    </button>
+
+                    <button class="btn-primary" onclick="saveGameMenu()" style="margin-top: 14px;">
+                        💾 GUARDAR EN CSTRIKE/RESOURCE/GAMEMENU.RES
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-subtitle">Simulador Visual del Menú CS 1.6</div>
+                    <div class="gamemenu-mockup-frame">
+                        <div class="mockup-header">COUNTER-STRIKE 1.6</div>
+                        <div class="mockup-menu-items" id="gameMenuMockup"></div>
+                    </div>
+
+                    <div class="control-row" style="margin-top: 20px;">
+                        <label>Color de Texto de Interfaz / HUD (TrackerScheme.res)</label>
+                        <div class="inline-color-picker">
+                            <input type="color" id="hudSchemeColor" value="#f5a623">
+                            <button class="btn-secondary" onclick="applyHudColor()">Aplicar a TrackerScheme.res</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 4: Demo a MP4 (.dem) -->
+            <div class="mod-subpane" id="modpane-conv-demomp4">
+                <div class="module-header">
+                    <h2>🎬 Conversor de Demos GoldSrc a Video MP4 (.dem a .mp4)</h2>
+                    <p>Un archivo .dem no es un video, sino un registro de red. Renderiza fotograma por fotograma con el comando nativo <code>startmovie</code> y compila con FFmpeg a 60 o 120 FPS sin pérdida de fluidez.</p>
+                </div>
+
+                <div class="grid-2col-layout">
+                    <!-- Columna Izquierda: Preparación y Guía de Captura -->
+                    <div class="card">
+                        <div class="card-subtitle">1. Preparación de Grabación en CS 1.6</div>
+                        
+                        <div class="control-row">
+                            <label>Demos (.dem) Detectadas en cstrike/</label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="demoFileSelect" style="flex:1;" onchange="onDemoSelected(this.value)">
+                                    <option value="">Escaneando demos...</option>
+                                </select>
+                                <button class="btn-secondary" onclick="scanDemosAndFrames()" title="Refrescar lista de demos">🔄</button>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <label>Comando viewdemo para Consola (~)</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="demoViewCmd" readonly value="viewdemo minombre" style="font-family:var(--font-mono); background:#0c0f13;">
+                                <button class="btn-secondary" onclick="copyDemoCmd('demoViewCmd')">📋 Copiar</button>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <label>Comandos de Calidad Óptima (Sin HUD y Texturas HD)</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="demoQualityCmd" readonly value="hud_draw 0; crosshair 1; r_detailtextures 1; gl_texturemode GL_LINEAR_MIPMAP_LINEAR" style="font-family:var(--font-mono); background:#0c0f13; font-size:0.8rem;">
+                                <button class="btn-secondary" onclick="copyDemoCmd('demoQualityCmd')">📋 Copiar</button>
+                            </div>
+                        </div>
+
+                        <div class="control-row">
+                            <label>Binds de Volcado de Cuadros (F9 Grabar / F10 Detener)</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="demoBindsCmd" readonly value='bind F9 "startmovie clip 60"; bind F10 "endmovie"' style="font-family:var(--font-mono); background:#0c0f13; font-size:0.85rem;">
+                                <button class="btn-secondary" onclick="copyDemoCmd('demoBindsCmd')">📋 Copiar</button>
+                            </div>
+                            <span class="hint">Al presionar F9 en la demo, el juego guardará cada fotograma BMP en cstrike/. Presiona F10 al terminar la jugada.</span>
+                        </div>
+
+                        <!-- Subpestañas para Métodos de Captura (startmovie / HLAE / OBS) -->
+                        <div class="subtabs-bar" style="margin-top:18px;">
+                            <button class="subtab-btn active" data-subtab="demo-guide-startmovie">Método startmovie</button>
+                            <button class="subtab-btn" data-subtab="demo-guide-hlae">Método HLAE</button>
+                            <button class="subtab-btn" data-subtab="demo-guide-obs">Método OBS Studio</button>
+                        </div>
+
+                        <div class="subtab-pane active" id="subpane-demo-guide-startmovie" style="padding:10px 0; font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                            <p style="color:#fff; font-weight:600; margin-bottom:4px;">Flujo Paso a Paso:</p>
+                            <ol style="margin-left:18px;">
+                                <li>Abre CS 1.6 y baja la consola (<code>~</code>).</li>
+                                <li>Escribe <code>viewdemo nombre</code> y pausa segundos antes de la jugada.</li>
+                                <li>Pega los comandos de calidad y presiona <b>F9</b> para iniciar el volcado.</li>
+                                <li>Reanuda la reproducción. El motor guardará cada fotograma <code>clip*.bmp</code> y el audio <code>clip.wav</code> en <code>cstrike/</code>.</li>
+                                <li>Al terminar la jugada, presiona <b>F10</b> inmediatamente.</li>
+                            </ol>
+                        </div>
+
+                        <div class="subtab-pane" id="subpane-demo-guide-hlae" style="padding:10px 0; font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                            <p style="color:#fff; font-weight:600; margin-bottom:4px;">Half-Life Advanced Effects (Cinemáticas):</p>
+                            <p>Ejecuta el juego mediante HLAE para separar streams de audio, HUD y modelos en capas independientes con canal alfa:</p>
+                            <pre style="background:#0c0f13; padding:8px; border-radius:6px; margin-top:6px; font-family:var(--font-mono); color:var(--accent);">mirv_movie_filename "clip"
+mirv_movie_fps 60
+mirv_movie_splitstreams 1</pre>
+                        </div>
+
+                        <div class="subtab-pane" id="subpane-demo-guide-obs" style="padding:10px 0; font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                            <p style="color:#fff; font-weight:600; margin-bottom:4px;">Captura Directa en Tiempo Real (OBS):</p>
+                            <ol style="margin-left:18px;">
+                                <li>Agrega fuente <b>Captura de Juego</b> en OBS apuntando a <code>hl.exe</code>.</li>
+                                <li>En CS 1.6 abre <code>viewdemo nombre</code> y presiona barra espaciadora para ocultar la interfaz.</li>
+                                <li>Inicia la grabación en OBS, reproduce a 1x y guarda directamente en .mp4.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Compilación FFmpeg -->
+                    <div class="card">
+                        <div class="card-subtitle">2. Compilación de Fotogramas a MP4 con FFmpeg</div>
+
+                        <!-- Estado de FFmpeg -->
+                        <div id="ffmpegStatusCard" style="padding:12px; border-radius:8px; background:rgba(0,0,0,0.3); border:1px solid var(--border); margin-bottom:16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span id="ffmpegLed" class="status-led" style="background:#ff4757;"></span>
+                                    <strong id="ffmpegStatusTitle">FFmpeg: Verificando...</strong>
+                                </div>
+                                <span class="badge" id="ffmpegBadge">Detectando</span>
+                            </div>
+                            <div id="ffmpegDesc" style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Buscando ejecutable en PATH del sistema...</div>
+                            <div id="ffmpegCustomPathRow" style="margin-top:10px; display:none;">
+                                <label style="font-size:0.75rem;">Ruta Manual a ffmpeg.exe</label>
+                                <div style="display:flex; gap:6px;">
+                                    <input type="text" id="customFfmpegInput" placeholder="C:\ffmpeg\bin\ffmpeg.exe" style="flex:1; font-size:0.8rem;">
+                                    <button class="btn-secondary" onclick="saveCustomFfmpeg()" style="padding:4px 10px; font-size:0.8rem;">Guardar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métricas de Fotogramas Detectados -->
+                        <div class="metrics-bar" style="margin-bottom:16px;">
+                            <div class="metric-line">
+                                <span>Fotogramas en cstrike/:</span>
+                                <strong id="demoFramesCount">0 fotogramas</strong>
+                            </div>
+                            <div class="metrics-detail">
+                                <div><span>Audio clip.wav:</span> <b id="demoAudioStatus">No detectado</b></div>
+                                <div><span>Espacio en Disco:</span> <b id="demoDiskMb">0 MB</b></div>
+                                <div><span>Duración (60 FPS):</span> <b id="demoDurationEst">0.0 s</b></div>
+                            </div>
+                        </div>
+
+                        <!-- Opciones de Compilación -->
+                        <div class="grid-2col">
+                            <div>
+                                <label>Prefijo de Captura</label>
+                                <input type="text" id="demoPrefix" value="clip" onchange="scanDemosAndFrames()">
+                            </div>
+                            <div>
+                                <label>Tasa de Cuadros (FPS)</label>
+                                <select id="demoFpsSelect" onchange="updateDemoDuration()">
+                                    <option value="60" selected>60 FPS (Estándar YouTube / Esports)</option>
+                                    <option value="120">120 FPS (Cámara Lenta Ultra Fluida)</option>
+                                    <option value="30">30 FPS (Bajo Consumo)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid-2col" style="margin-top:10px;">
+                            <div>
+                                <label>Calidad Visual (CRF H.264)</label>
+                                <select id="demoCrfSelect">
+                                    <option value="15">CRF 15 (Máxima Definición)</option>
+                                    <option value="18" selected>CRF 18 (Visualmente Sin Pérdida - Óptimo)</option>
+                                    <option value="21">CRF 21 (Equilibrado)</option>
+                                    <option value="24">CRF 24 (Comprimido)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Preset de Codificación</label>
+                                <select id="demoPresetSelect">
+                                    <option value="veryslow">Very Slow (Máxima eficiencia)</option>
+                                    <option value="slow" selected>Slow (Recomendado)</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="fast">Fast</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control-row" style="margin-top:10px;">
+                            <label>Nombre del Archivo de Salida (.mp4)</label>
+                            <input type="text" id="demoOutputName" value="mi_jugada.mp4">
+                        </div>
+
+                        <div class="control-row">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="demoCleanupCheck" checked>
+                                <span>🗑️ Limpieza automática de fotogramas BMP y WAV al terminar para liberar disco</span>
+                            </label>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="action-buttons-group" style="margin-top:16px;">
+                            <button class="btn-primary" id="btnCompileDemoMp4" onclick="compileDemoToMp4()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span>COMPILAR VIDEO MP4 (H.264 / AAC)</span>
+                            </button>
+                            <button class="btn-secondary" onclick="cleanupDemoFramesManual()" title="Borrar archivos BMP y WAV temporales en cstrike/">
+                                🗑️ Limpiar Fotogramas Temporales
+                            </button>
+                        </div>
+
+                        <!-- Consola de Salida del Render -->
+                        <div id="demoOutputConsole" style="display:none; margin-top:14px; padding:12px; background:#080a0d; border:1px solid var(--border); border-radius:6px; font-family:var(--font-mono); font-size:0.8rem; color:#a0aec0; max-height:160px; overflow-y:auto;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ============================================================= -->
+        <!-- MÓDULO UNIFICADO 2: BINDS & CONFIGURACIÓN (TECLADO 100%, NETCODE, MENU H, MANUAL) -->
+        <!-- ============================================================= -->
+        <section class="tab-pane" id="tab-configsuite">
+            <!-- Barra de Sub-Navegación del Módulo -->
+            <div class="module-subtabs-nav">
+                <button class="mod-subtab-btn active" data-modtab="cfg-binds">
+                    ⌨️ Teclado Visual 100% & Binds
+                </button>
+                <button class="mod-subtab-btn" data-modtab="cfg-netcode">
+                    ⚡ Netcode & Rates (userconfig.cfg)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="cfg-commandmenu">
+                    🌲 CommandMenu [H] (commandmenu.txt)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="cfg-manual">
+                    📖 Manual & Comandos
+                </button>
+            </div>
+
+            <!-- Subsección 1: Teclado Completo 100% & Binds -->
+            <div class="mod-subpane active" id="modpane-cfg-binds">
+
+            <div class="module-header">
+                <h2>⌨️ Full Visual Keybind Studio (CS 1.6 Teclado 100%)</h2>
+                <p>Configurador visual e interactivo al 100%: bloque alfanumérico, fila F1-F12, navegación, Numpad y botones del mouse. Asigna comandos rápidos por categorías de color, carga presets de esports y compila tu archivo <code>binds.cfg</code> en tiempo real.</p>
+            </div>
+
+            <!-- Barra de Leyenda -->
+            <div class="legend-bar">
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-movement)"></div> Movimiento (+forward, +jump)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-combat)"></div> Disparo / Combate (+attack, reload)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-buy)"></div> Compras Numéricas (ak47, awp, kit)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-comm)"></div> Voz y Chat (+voicerecord, messagemode)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-util)"></div> Menús y Utilidades (scores, menu H)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--k-empty); border: 1px solid #444;"></div> Sin Asignar</div>
+            </div>
+
+            <!-- TECLADO COMPLETO 100% -->
+            <div class="keyboard-wrapper">
+                <!-- SECCIÓN PRINCIPAL: ALFANUMÉRICO Y FUNCIONES -->
+                <div class="section-main">
+                    <!-- Fila Funciones (Esc, F1-F12) -->
+                    <div class="kb-row">
+                        <div class="key" id="k_ESCAPE" onclick="selectKey('ESCAPE')"><span class="key-name">ESC</span><span class="key-bind"></span></div>
+                        <div class="gap-full"></div>
+                        <div class="key" id="k_F1" onclick="selectKey('F1')"><span class="key-name">F1</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F2" onclick="selectKey('F2')"><span class="key-name">F2</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F3" onclick="selectKey('F3')"><span class="key-name">F3</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F4" onclick="selectKey('F4')"><span class="key-name">F4</span><span class="key-bind"></span></div>
+                        <div class="gap-half"></div>
+                        <div class="key" id="k_F5" onclick="selectKey('F5')"><span class="key-name">F5</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F6" onclick="selectKey('F6')"><span class="key-name">F6</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F7" onclick="selectKey('F7')"><span class="key-name">F7</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F8" onclick="selectKey('F8')"><span class="key-name">F8</span><span class="key-bind"></span></div>
+                        <div class="gap-half"></div>
+                        <div class="key" id="k_F9" onclick="selectKey('F9')"><span class="key-name">F9</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F10" onclick="selectKey('F10')"><span class="key-name">F10</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F11" onclick="selectKey('F11')"><span class="key-name">F11</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_F12" onclick="selectKey('F12')"><span class="key-name">F12</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <!-- Fila Números (` a Backspace) -->
+                    <div class="kb-row" style="margin-top: 6px;">
+                        <div class="key" id="k_`" onclick="selectKey('`')"><span class="key-name">~ / `</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_1" onclick="selectKey('1')"><span class="key-name">1</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_2" onclick="selectKey('2')"><span class="key-name">2</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_3" onclick="selectKey('3')"><span class="key-name">3</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_4" onclick="selectKey('4')"><span class="key-name">4</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_5" onclick="selectKey('5')"><span class="key-name">5</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_6" onclick="selectKey('6')"><span class="key-name">6</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_7" onclick="selectKey('7')"><span class="key-name">7</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_8" onclick="selectKey('8')"><span class="key-name">8</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_9" onclick="selectKey('9')"><span class="key-name">9</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_0" onclick="selectKey('0')"><span class="key-name">0</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_-" onclick="selectKey('-')"><span class="key-name">-</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_=" onclick="selectKey('=')"><span class="key-name">=</span><span class="key-bind"></span></div>
+                        <div class="key w-backspace" id="k_BACKSPACE" onclick="selectKey('BACKSPACE')"><span class="key-name">BACKSPACE</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <!-- Fila QWERTY -->
+                    <div class="kb-row">
+                        <div class="key w-tab" id="k_TAB" onclick="selectKey('TAB')"><span class="key-name">TAB</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_q" onclick="selectKey('q')"><span class="key-name">Q</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_w" onclick="selectKey('w')"><span class="key-name">W</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_e" onclick="selectKey('e')"><span class="key-name">E</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_r" onclick="selectKey('r')"><span class="key-name">R</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_t" onclick="selectKey('t')"><span class="key-name">T</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_y" onclick="selectKey('y')"><span class="key-name">Y</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_u" onclick="selectKey('u')"><span class="key-name">U</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_i" onclick="selectKey('i')"><span class="key-name">I</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_o" onclick="selectKey('o')"><span class="key-name">O</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_p" onclick="selectKey('p')"><span class="key-name">P</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_[" onclick="selectKey('[')"><span class="key-name">[</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_]" onclick="selectKey(']')"><span class="key-name">]</span><span class="key-bind"></span></div>
+                        <div class="key" style="flex: 1;" id="k_\\" onclick="selectKey('\\')"><span class="key-name">\\</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <!-- Fila ASDF -->
+                    <div class="kb-row">
+                        <div class="key w-caps" id="k_CAPSLOCK" onclick="selectKey('CAPSLOCK')"><span class="key-name">CAPS</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_a" onclick="selectKey('a')"><span class="key-name">A</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_s" onclick="selectKey('s')"><span class="key-name">S</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_d" onclick="selectKey('d')"><span class="key-name">D</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_f" onclick="selectKey('f')"><span class="key-name">F</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_g" onclick="selectKey('g')"><span class="key-name">G</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_h" onclick="selectKey('h')"><span class="key-name">H</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_j" onclick="selectKey('j')"><span class="key-name">J</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_k" onclick="selectKey('k')"><span class="key-name">K</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_l" onclick="selectKey('l')"><span class="key-name">L</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_;" onclick="selectKey(';')"><span class="key-name">;</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_\'" onclick="selectKey('\'')"><span class="key-name">'</span><span class="key-bind"></span></div>
+                        <div class="key w-enter" id="k_ENTER" onclick="selectKey('ENTER')"><span class="key-name">ENTER</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <!-- Fila ZXCV -->
+                    <div class="kb-row">
+                        <div class="key w-shift-l" id="k_SHIFT" onclick="selectKey('SHIFT')"><span class="key-name">SHIFT</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_z" onclick="selectKey('z')"><span class="key-name">Z</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_x" onclick="selectKey('x')"><span class="key-name">X</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_c" onclick="selectKey('c')"><span class="key-name">C</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_v" onclick="selectKey('v')"><span class="key-name">V</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_b" onclick="selectKey('b')"><span class="key-name">B</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_n" onclick="selectKey('n')"><span class="key-name">N</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_m" onclick="selectKey('m')"><span class="key-name">M</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_," onclick="selectKey(',')"><span class="key-name">,</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_." onclick="selectKey('.')"><span class="key-name">.</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_/" onclick="selectKey('/')"><span class="key-name">/</span><span class="key-bind"></span></div>
+                        <div class="key w-shift-r" id="k_RSHIFT" onclick="selectKey('RSHIFT')"><span class="key-name">R-SHIFT</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <!-- Fila Inferior (Ctrl, Space, etc.) -->
+                    <div class="kb-row">
+                        <div class="key w-mod" id="k_CTRL" onclick="selectKey('CTRL')"><span class="key-name">CTRL</span><span class="key-bind"></span></div>
+                        <div class="key w-mod" id="k_ALT" onclick="selectKey('ALT')"><span class="key-name">ALT</span><span class="key-bind"></span></div>
+                        <div class="key w-space" id="k_SPACE" onclick="selectKey('SPACE')"><span class="key-name">SPACEBAR</span><span class="key-bind"></span></div>
+                        <div class="key w-mod" id="k_RALT" onclick="selectKey('RALT')"><span class="key-name">R-ALT</span><span class="key-bind"></span></div>
+                        <div class="key w-mod" id="k_RCTRL" onclick="selectKey('RCTRL')"><span class="key-name">R-CTRL</span><span class="key-bind"></span></div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE DE NAVEGACIÓN Y FLECHAS -->
+                <div class="section-nav">
+                    <div class="kb-row">
+                        <div class="key" id="k_PAUSE" onclick="selectKey('PAUSE')"><span class="key-name">PAUSE</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <div class="kb-row" style="margin-top: 6px;">
+                        <div class="key" id="k_INS" onclick="selectKey('INS')"><span class="key-name">INS</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_HOME" onclick="selectKey('HOME')"><span class="key-name">HOME</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_PGUP" onclick="selectKey('PGUP')"><span class="key-name">PGUP</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <div class="kb-row">
+                        <div class="key" id="k_DEL" onclick="selectKey('DEL')"><span class="key-name">DEL</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_END" onclick="selectKey('END')"><span class="key-name">END</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_PGDN" onclick="selectKey('PGDN')"><span class="key-name">PGDN</span><span class="key-bind"></span></div>
+                    </div>
+
+                    <div class="spacer"></div>
+
+                    <!-- Flechas Direccionales -->
+                    <div class="kb-row" style="justify-content: center;">
+                        <div class="key" id="k_UPARROW" onclick="selectKey('UPARROW')"><span class="key-name">▲</span><span class="key-bind"></span></div>
+                    </div>
+                    <div class="kb-row">
+                        <div class="key" id="k_LEFTARROW" onclick="selectKey('LEFTARROW')"><span class="key-name">◄</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_DOWNARROW" onclick="selectKey('DOWNARROW')"><span class="key-name">▼</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_RIGHTARROW" onclick="selectKey('RIGHTARROW')"><span class="key-name">►</span><span class="key-bind"></span></div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE NUMPAD / TECLADO NUMÉRICO -->
+                <div class="section-numpad">
+                    <div class="kb-row">
+                        <div class="key" id="k_KP_SLASH" onclick="selectKey('KP_SLASH')"><span class="key-name">/</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_MULTIPLY" onclick="selectKey('KP_MULTIPLY')"><span class="key-name">*</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_MINUS" onclick="selectKey('KP_MINUS')"><span class="key-name">-</span><span class="key-bind"></span></div>
+                    </div>
+                    <div class="kb-row">
+                        <div class="key" id="k_KP_HOME" onclick="selectKey('KP_HOME')"><span class="key-name">7</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_UPARROW" onclick="selectKey('KP_UPARROW')"><span class="key-name">8</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_PGUP" onclick="selectKey('KP_PGUP')"><span class="key-name">9</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_PLUS" onclick="selectKey('KP_PLUS')"><span class="key-name">+</span><span class="key-bind"></span></div>
+                    </div>
+                    <div class="kb-row">
+                        <div class="key" id="k_KP_LEFTARROW" onclick="selectKey('KP_LEFTARROW')"><span class="key-name">4</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_5" onclick="selectKey('KP_5')"><span class="key-name">5</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_RIGHTARROW" onclick="selectKey('KP_RIGHTARROW')"><span class="key-name">6</span><span class="key-bind"></span></div>
+                    </div>
+                    <div class="kb-row">
+                        <div class="key" id="k_KP_END" onclick="selectKey('KP_END')"><span class="key-name">1</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_DOWNARROW" onclick="selectKey('KP_DOWNARROW')"><span class="key-name">2</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_PGDN" onclick="selectKey('KP_PGDN')"><span class="key-name">3</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_ENTER" onclick="selectKey('KP_ENTER')"><span class="key-name">ENT</span><span class="key-bind"></span></div>
+                    </div>
+                    <div class="kb-row">
+                        <div class="key w-kp-wide" id="k_KP_INS" onclick="selectKey('KP_INS')"><span class="key-name">0 (Ins)</span><span class="key-bind"></span></div>
+                        <div class="key" id="k_KP_DEL" onclick="selectKey('KP_DEL')"><span class="key-name">. (Del)</span><span class="key-bind"></span></div>
+                    </div>
+                </div>
+
+                <!-- BLOQUE MOUSE GAMER -->
+                <div class="section-mouse">
+                    <span style="font-size:0.68rem; font-weight:700; color:var(--accent-gold); text-align:center;">MOUSE</span>
+                    <div class="key w-mouse" id="k_MOUSE1" onclick="selectKey('MOUSE1')"><span class="key-name">M1 (Izquierdo)</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MOUSE2" onclick="selectKey('MOUSE2')"><span class="key-name">M2 (Derecho)</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MOUSE3" onclick="selectKey('MOUSE3')"><span class="key-name">M3 (Rueda Clic)</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MWHEELUP" onclick="selectKey('MWHEELUP')"><span class="key-name">Rueda Arriba</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MWHEELDOWN" onclick="selectKey('MWHEELDOWN')"><span class="key-name">Rueda Abajo</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MOUSE4" onclick="selectKey('MOUSE4')"><span class="key-name">M4 (Lateral 1)</span><span class="key-bind"></span></div>
+                    <div class="key w-mouse" id="k_MOUSE5" onclick="selectKey('MOUSE5')"><span class="key-name">M5 (Lateral 2)</span><span class="key-bind"></span></div>
+                </div>
+            </div>
+
+            <!-- PANEL DE EDICIÓN Y SALIDA CFG -->
+            <div class="kb-control-panel">
+                <!-- Editor de Tecla Seleccionada -->
+                <div class="card">
+                    <div class="card-subtitle" id="editorTitle">Configurando tecla: [ W ]</div>
+                    
+                    <div class="control-row">
+                        <label>Acciones Rápidas Predefinidas</label>
+                        <select id="quickActionSelect" onchange="applyPresetAction()">
+                            <option value="">-- Elige una acción común --</option>
+                            <optgroup label="Movimiento">
+                                <option value="+forward|c-movement">Avanzar (+forward)</option>
+                                <option value="+back|c-movement">Retroceder (+back)</option>
+                                <option value="+moveleft|c-movement">Mover Izquierda (+moveleft)</option>
+                                <option value="+moveright|c-movement">Mover Derecha (+moveright)</option>
+                                <option value="+jump|c-movement">Saltar (+jump)</option>
+                                <option value="+duck|c-movement">Agacharse (+duck)</option>
+                                <option value="+speed|c-movement">Caminar Silencioso (+speed)</option>
+                            </optgroup>
+                            <optgroup label="Combate y Armas">
+                                <option value="+attack|c-combat">Disparo Principal (+attack)</option>
+                                <option value="+attack2|c-combat">Disparo Secundario / Zoom (+attack2)</option>
+                                <option value="+reload|c-combat">Recargar (+reload)</option>
+                                <option value="lastinv|c-combat">Última Arma (lastinv / Q)</option>
+                                <option value="drop|c-combat">Tirar Arma (drop)</option>
+                                <option value="+use|c-combat">Usar / Activar C4 (+use)</option>
+                                <option value="impulse 100|c-combat">Linterna</option>
+                                <option value="impulse 201|c-combat">Pintar Grafiti (Spray)</option>
+                                <option value="slot1|c-combat">Arma Primaria (slot1)</option>
+                                <option value="slot2|c-combat">Pistola (slot2)</option>
+                                <option value="slot3|c-combat">Cuchillo (slot3)</option>
+                                <option value="slot4|c-combat">Granadas (slot4)</option>
+                                <option value="slot5|c-combat">C4 (slot5)</option>
+                            </optgroup>
+                            <optgroup label="Compras Numéricas Rápidas (Numpad)">
+                                <option value="m4a1; ak47; primammo|c-buy">Comprar AK-47 / M4A1 + Balas</option>
+                                <option value="awp; primammo|c-buy">Comprar AWP + Balas</option>
+                                <option value="deagle; secammo|c-buy">Comprar Desert Eagle + Balas</option>
+                                <option value="mp5; primammo|c-buy">Comprar MP5 Navy + Balas</option>
+                                <option value="famas; galil; primammo|c-buy">Comprar Famas / Galil + Balas</option>
+                                <option value="scout; primammo|c-buy">Comprar Scout + Balas</option>
+                                <option value="vesthelm; vest; defuser|c-buy">Chaleco + Casco + Kit Defuse</option>
+                                <option value="vest|c-buy">Solo Chaleco</option>
+                                <option value="defuser|c-buy">Kit de Desactivación</option>
+                                <option value="hegren|c-buy">Granada HE (Explosiva)</option>
+                                <option value="flash|c-buy">Granada Flash (Cegadora)</option>
+                                <option value="sgren|c-buy">Granada de Humo</option>
+                            </optgroup>
+                            <optgroup label="Comunicación">
+                                <option value="+voicerecord|c-comm">Hablar por Micrófono (+voicerecord)</option>
+                                <option value="messagemode|c-comm">Chat Global (Say)</option>
+                                <option value="messagemode2|c-comm">Chat de Equipo (Say_Team)</option>
+                                <option value="radio1|c-comm">Radio 1 (Comandos)</option>
+                                <option value="radio2|c-comm">Radio 2 (Respuestas)</option>
+                                <option value="radio3|c-comm">Radio 3 (Reportes)</option>
+                            </optgroup>
+                            <optgroup label="Menús y Sistema">
+                                <option value="+showscores|c-util">Tabla de Puntuación (Scoreboard)</option>
+                                <option value="cancelselect|c-util">Cancelar / Menú Escape</option>
+                                <option value="toggleconsole|c-util">Consola (~)</option>
+                                <option value="+commandmenu|c-util">CommandMenu (H)</option>
+                                <option value="snapshot|c-util">Captura de Pantalla (F5)</option>
+                                <option value="stopsound|c-util">Limpiar Sonido Bugeado</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Comando Exacto (o personalizado)</label>
+                        <input type="text" id="customCommandInput" placeholder="ej: +forward o m4a1; ak47; primammo">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Categoría Visual (Color)</label>
+                        <select id="keyCategorySelect">
+                            <option value="">Sin Categoría (Gris)</option>
+                            <option value="c-movement">Movimiento (Verde)</option>
+                            <option value="c-combat">Combate (Rojo)</option>
+                            <option value="c-buy">Compras (Púrpura)</option>
+                            <option value="c-comm">Voz / Chat (Azul)</option>
+                            <option value="c-util">Menú / Utilidad (Rosa)</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons-group" style="margin-top: 14px;">
+                        <button class="btn-primary" onclick="saveCurrentKey()">Asignar a Tecla</button>
+                        <button class="btn-secondary" onclick="unbindCurrentKey()">Desvincular (Unbind)</button>
+                        <button class="btn-secondary" onclick="loadCompetitivePreset()">Preset Pro Esports</button>
+                        <button class="btn-danger" onclick="clearAllBinds()">🧹 Limpiar Todo</button>
+                    </div>
+                </div>
+
+                <!-- Salida en Tiempo Real de binds.cfg -->
+                <div class="card">
+                    <div class="card-subtitle">Vista Previa de binds.cfg Generado</div>
+                    <textarea id="cfgOutput" class="cfg-output" readonly></textarea>
+                    
+                    <div class="action-buttons-group" style="margin-top: 14px;">
+                        <button class="btn-primary" onclick="installBindsToGame()">
+                            ⚡ INSTALAR EN CSTRIKE/BINDS.CFG
+                        </button>
+                        <button class="btn-secondary" onclick="downloadBindsConfig()">
+                            📥 Descargar binds.cfg
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+
+            <!-- Subsección 2: Netcode & Rates (Calculadora Matemática Oficial GoldSrc) -->
+            <div class="mod-subpane" id="modpane-cfg-netcode">
+
+            <div class="module-header">
+                <h2>⚡ Calculadora de Netcode GoldSrc & Hub de Configuración</h2>
+                <p>Cálculo matemático exacto de tasas del motor: <code>ex_interp = 1 / cl_updaterate</code>, compatibilidad <code>fps_override</code> vs <code>fps_max</code>, separación estricta de render y red, inyección no destructiva de <code>userconfig.cfg</code> y snapshots automáticos con rollback.</p>
+            </div>
+
+            <!-- TARJETA FORMULA MATEMÁTICA OFICIAL -->
+            <div class="netcode-formula-card">
+                <div>
+                    <div style="font-size:0.78rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Ecuación Oficial del Motor GoldSrc</div>
+                    <div style="font-size:1.05rem; font-weight:700; color:#fff; margin-top:2px;">Sincronización Precisa de Interpolación de Hitboxes</div>
+                </div>
+                <div class="formula-badge">
+                    ex_interp = 1 / cl_updaterate
+                </div>
+            </div>
+
+            <div class="grid-2col-layout">
+                <!-- Columna 1: Calculadora Matemática y Presets -->
+                <div class="card">
+                    <div class="card-subtitle">Entradas de Calibración Matemática</div>
+
+                    <div class="control-row">
+                        <label>Perfil Oficial Predefinido</label>
+                        <select id="cfgHubPresetSelect" onchange="onCfgHubPresetChange(this.value)">
+                            <option value="competitive_100" selected>🏆 Competitivo Estándar (100 FPS / 10ms Interp / Torneos)</option>
+                            <option value="low_ping_esports">⚡ Ultra Baja Latencia (Ping &lt; 20ms / Fibra Óptica / 9.8ms Interp)</option>
+                            <option value="kzbhop_highfps">🐇 KZ &amp; BunnyHop (FPS Desbloqueados / 250 FPS / Movilidad)</option>
+                            <option value="casual_native_hd">🎨 Casual &amp; Gráficos Nativos HD (Texturas Máximas)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-3col" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:0.75rem;">Ping Promedio (ms)</label>
+                            <input type="number" id="calcPingMs" value="25" min="1" max="250" oninput="calculateNetcodeRates()">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;">Ancho de Banda (Mbps)</label>
+                            <input type="number" id="calcBandwidthMbps" value="50" min="1" max="1000" oninput="calculateNetcodeRates()">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;">FPS Objetivo</label>
+                            <select id="calcTargetFps" onchange="calculateNetcodeRates()">
+                                <option value="100" selected>100 FPS (Estándar)</option>
+                                <option value="105">105 FPS (Comp)</option>
+                                <option value="144">144 FPS</option>
+                                <option value="200">200 FPS</option>
+                                <option value="250">250 FPS (KZ/Surf)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Salidas de Cálculo en Tiempo Real -->
+                    <div class="card-subtitle" style="font-size:0.8rem; margin-top:10px;">Tasas Calculadas Oficiales (GoldSrc Engine)</div>
+                    <div class="grid-2col" style="margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.72rem;">rate (Búfer de red)</label>
+                            <input type="number" id="cfgRate" value="100000" readonly style="background:#090d14; color:#38bdf8; font-weight:700;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem;">cl_updaterate (Paquetes server)</label>
+                            <input type="number" id="cfgUpdate" value="102" readonly style="background:#090d14; color:#38bdf8; font-weight:700;">
+                        </div>
+                    </div>
+                    <div class="grid-2col" style="margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.72rem;">cl_cmdrate (Paquetes cliente)</label>
+                            <input type="number" id="cfgCmd" value="105" readonly style="background:#090d14; color:#38bdf8; font-weight:700;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem;">ex_interp (1 / cl_updaterate)</label>
+                            <input type="text" id="cfgInterp" value="0.0098" readonly style="background:#090d14; color:var(--accent-gold); font-weight:800;">
+                        </div>
+                    </div>
+                    <div class="grid-2col" style="margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:0.72rem;">fps_max / fps_override</label>
+                            <input type="text" id="cfgFpsDisplay" value="fps_max 99.5 (override 0)" readonly style="background:#090d14; color:#a0aec0; font-size:0.75rem;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem;">m_rawinput (Mouse)</label>
+                            <input type="text" id="cfgRawInputDisplay" value="1 (Entrada Pura Activa)" readonly style="background:#090d14; color:#22c55e; font-size:0.75rem;">
+                        </div>
+                    </div>
+
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" onclick="injectCalculatedCfg()" title="Aplica configuración sin tocar tus binds ni aliases personales">
+                            🛡️ INYECCIÓN NO DESTRUCTIVA EN USERCONFIG.CFG
+                        </button>
+                        <button class="btn-secondary" onclick="loadCfgSnapshots()" title="Ver y restaurar copias de seguridad de CFGs">
+                            📜 Historial de Snapshots
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Editor y Vista Previa Limpia -->
+                <div class="card">
+                    <div class="card-subtitle">Vista Previa Limpia de userconfig.cfg</div>
+                    <textarea id="cfgCodePreview" class="code-editor" style="height:310px; font-size:0.78rem;" readonly></textarea>
+
+                    <div class="action-buttons-group" style="margin-top:10px;">
+                        <button class="btn-secondary" onclick="downloadCalculatedCfg()">
+                            📥 Descargar userconfig.cfg
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD DE GESTIÓN DE SNAPSHOTS Y ROLLBACK -->
+            <div class="card" id="cfgSnapshotsCard" style="margin-top:20px; display:none;">
+                <div class="card-subtitle">🛡️ Snapshots de Seguridad de Archivos .CFG (Rollback Automático)</div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+                    Cada inyección guarda una instantánea comprimida con fecha y hora de todos los archivos <code>cstrike/*.cfg</code>. Puedes revertir el juego a cualquier estado previo con 1 solo clic.
+                </p>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Identificador de Snapshot</th>
+                                <th>Fecha y Hora</th>
+                                <th>Archivos Respaldados</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cfgSnapshotsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 3: CommandMenu [H] -->
+            <div class="mod-subpane" id="modpane-cfg-commandmenu">
+
+            <div class="module-header">
+                <h2>🌲 Compilador de CommandMenu (commandmenu.txt)</h2>
+                <p>Genera el menú emergente de la tecla <b>[H]</b> en partida con el límite ergonómico de <b>máximo 9 opciones por nivel</b> para evitar incómodas paginaciones numéricas.</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <div class="card">
+                    <div class="card-subtitle">Estructura de Menú (Máx 9 por nivel)</div>
+                    <div class="cmdmenu-tree-view" id="cmdMenuTreeView"></div>
+
+                    <button class="btn-secondary" onclick="addCommandMenuCategory()" style="margin-top: 12px; width:100%;">
+                        ➕ Añadir Categoría Principal
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-subtitle">Vista Previa commandmenu.txt</div>
+                    <textarea id="cmdMenuPreviewText" class="code-editor" readonly></textarea>
+
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" onclick="installCommandMenu()">
+                            💾 INSTALAR EN CSTRIKE/COMMANDMENU.TXT
+                        </button>
+                        <button class="btn-secondary" onclick="downloadCommandMenu()">
+                            Descargar commandmenu.txt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 4: Manual & Comandos -->
+            <div class="mod-subpane" id="modpane-cfg-manual">
+
+            <div class="module-header">
+                <h2>📖 Manual & Enciclopedia Completa de Comandos GoldSrc</h2>
+                <p>Base de conocimiento exhaustiva de comandos de consola, alias de compra de armas, calibración de netcode, variables gráficas, audio y comandos de administración para Counter-Strike 1.6.</p>
+            </div>
+
+            <div class="card">
+                <!-- Barra superior de búsqueda y filtros -->
+                <div class="manual-top-toolbar">
+                    <div class="manual-search-wrapper">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="manualSearchInput" placeholder="Buscar comando, arma, cvar o función (ej: fps, interp, ak47, crosshair, stopsound)..." oninput="filterManualCommands()">
+                    </div>
+                    <div class="manual-stat-badge" id="manualStatsBadge">Cargando base de datos...</div>
+                </div>
+
+                <!-- Filtros por categoría -->
+                <div class="weapon-filter-tabs" style="margin-top: 14px;">
+                    <button class="cat-pill active" onclick="setManualCategory('all', this)">🌟 Todos</button>
+                    <button class="cat-pill" onclick="setManualCategory('weapons', this)">🔫 Armas y Compras</button>
+                    <button class="cat-pill" onclick="setManualCategory('netcode', this)">⚡ Netcode & Conexión</button>
+                    <button class="cat-pill" onclick="setManualCategory('visuals', this)">🎯 Mira, HUD y Radar</button>
+                    <button class="cat-pill" onclick="setManualCategory('video', this)">🖥️ Gráficos y FPS</button>
+                    <button class="cat-pill" onclick="setManualCategory('audio', this)">🔊 Audio y Voz</button>
+                    <button class="cat-pill" onclick="setManualCategory('server', this)">🎮 Servidor y Práctica</button>
+                </div>
+
+                <!-- Grid de Comandos -->
+                <div class="manual-commands-grid" id="manualCommandsGrid">
+                    <!-- Rellenado dinámicamente -->
+                </div>
+            </div>
+        
+            </div>
+        </section>
+        <section class="tab-pane" id="tab-assets">
+
+            <div class="module-header">
+                <h2>📦 Enrutador Inteligente de Assets (.mdl, .spr, .res, ZIP)</h2>
+                <p>Detecta automáticamente la naturaleza del archivo por convención GoldSrc: <code>v_ak47.mdl</code> a <code>models/</code>, <code>leet.mdl</code> a <code>models/player/leet/leet.mdl</code>, sprites a <code>sprites/</code> y paquetes ZIP completos con respaldo automático previo.</p>
+            </div>
+
+            <div class="card">
+                <div class="dropzone" id="assetDropzone" style="min-height: 180px;">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <div class="drop-title" id="assetDropTitle">Arrastra modelos, sprites o paquetes ZIP aquí</div>
+                    <div class="drop-desc">Soporta .mdl (armas y jugadores), .spr, .txt, .res, .wav, .wad y archivos comprimidos .zip</div>
+                    <input type="file" id="assetFileInput" multiple style="display:none;">
+                </div>
+
+                <div class="assets-log-container" id="assetsLogContainer" style="display:none; margin-top: 18px;">
+                    <div class="card-subtitle">Resultados de Enrutamiento e Instalación</div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Categoría Detectada</th>
+                                    <th>Ruta de Instalación en cstrike/</th>
+                                    <th>Tamaño</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetsLogTable"></tbody>
+                        </table>
+                </div>
+            </div>
+
+            <!-- CARD DEPURADOR DE ASSETS Y CACHÉ DE SERVIDORES CON WHITELIST VANILLA -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="module-header" style="margin-bottom: 12px;">
+                    <h3>🧹 Depurador de Caché de Servidores & Whitelist Vanilla Estricta</h3>
+                    <p>Libera gigabytes acumulados por descargas automáticas de servidores comunitarios (sprays de terceros, modelos y sonidos huérfanos). Protegido por una <b>whitelist vanilla estricta</b> que jamás toca mapas ni texturas originales del juego.</p>
+                </div>
+
+                <div class="whitelist-banner">
+                    <span class="whitelist-badge-pill">🛡️ Whitelist Protegida</span>
+                    <span style="font-size: 0.82rem; color: #e2e8f0;">
+                        <b>Archivos Inmunes:</b> <code>halflife.wad</code>, <code>cstrike.wad</code>, 25 mapas oficiales (de_dust2, de_inferno, de_nuke...), y modelos base de Valve (leet, arctic, gign, chick.mdl...).
+                    </span>
+                </div>
+
+                <div class="cleaner-metrics-grid">
+                    <div class="cleaner-metric-card">
+                        <div class="cleaner-metric-lbl">Total Liberable</div>
+                        <div class="cleaner-metric-val" id="cleanerTotalMb">0.0 MB</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);" id="cleanerTotalFiles">0 archivos</div>
+                    </div>
+                    <div class="cleaner-metric-card">
+                        <div class="cleaner-metric-lbl">custom.hpk (Sprays)</div>
+                        <div class="cleaner-metric-val" id="cleanerHpkMb">0.0 MB</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);" id="cleanerHpkStatus">No detectado</div>
+                    </div>
+                    <div class="cleaner-metric-card">
+                        <div class="cleaner-metric-lbl">cstrike/download/</div>
+                        <div class="cleaner-metric-val" id="cleanerDlMb">0.0 MB</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);" id="cleanerDlFiles">0 archivos</div>
+                    </div>
+                    <div class="cleaner-metric-card">
+                        <div class="cleaner-metric-lbl">Mapas de Servidor</div>
+                        <div class="cleaner-metric-val" id="cleanerMapsMb">0.0 MB</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);" id="cleanerMapsCount">0 mapas</div>
+                    </div>
+                    <div class="cleaner-metric-card">
+                        <div class="cleaner-metric-lbl">Modelos Jugador</div>
+                        <div class="cleaner-metric-val" id="cleanerModelsMb">0.0 MB</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);" id="cleanerModelsCount">0 carpetas</div>
+                    </div>
+                </div>
+
+                <div class="grid-2col" style="margin-bottom: 14px;">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="cleanHpkOpt" checked>
+                        <span>Eliminar <b>custom.hpk</b> (Caché acumulada de grafitis)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="cleanDlOpt" checked>
+                        <span>Vaciar <b>cstrike/download/</b> (Descargas huérfanas de servidores)</span>
+                    </label>
+                </div>
+
+                <div class="grid-2col" style="margin-bottom: 16px;">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="cleanMapsOpt">
+                        <span>Eliminar mapas descargados no oficiales (excluyendo vanilla)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="cleanModelsOpt">
+                        <span>Eliminar modelos de jugador descargados de servidores</span>
+                    </label>
+                </div>
+
+                <div class="action-buttons-group">
+                    <button class="btn-secondary" onclick="scanAssetsCache()">
+                        🔍 ESCANEAR CSTRIKE/
+                    </button>
+                    <button class="btn-primary" onclick="cleanAssetsCache()">
+                        🧹 LIMPIAR CACHÉ SELECCIONADA Y LIBERAR ESPACIO
+                    </button>
+                </div>
+
+                <div id="cleanerOutputBox" style="display:none; margin-top:14px; padding:12px; border-radius:6px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,106,0,0.3); font-size:0.85rem;"></div>
+            </div>
+        
+        </section>
+                <!-- ============================================================= -->
+        <!-- MÓDULO UNIFICADO: LANZADOR IA (STEAM/NO-STEAM, BOOSTER, COACH) -->
+        <!-- ============================================================= -->
+        <section class="tab-pane" id="tab-launcher-ia">
+            <div class="module-subtabs-nav">
+                <button class="mod-subtab-btn active" data-modtab="lia-launcher">
+                    🚀 Lanzador CS 1.6 (Steam & No-Steam)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="lia-booster">
+                    ⚡ Booster & Latencia (Kernel / WinMM)
+                </button>
+                <button class="mod-subtab-btn" data-modtab="lia-server-monitor">
+                    🌐 Monitor A2S & RCON
+                </button>
+                <button class="mod-subtab-btn" data-modtab="lia-telemetry">
+                    🧠 AI Coach & Telemetría (VAC-Safe)
+                </button>
+            </div>
+
+            <!-- Subsección 1: Lanzador CS 1.6 -->
+            <div class="mod-subpane active" id="modpane-lia-launcher">
+
+
+            <div class="module-header">
+                <h2>🚀 Centro de Lanzamiento & Conexión (Steam & No-Steam)</h2>
+                <p>Configura parámetros de rendimiento para tu monitor y resolución, elimina la aceleración de Windows y lanza el juego directamente (vía protocolo oficial de Steam o ejecutable No-Steam directo con <code>hl.exe</code>).</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <div class="card">
+                    <div class="card-subtitle">Ajustes de Rendimiento y Conexión</div>
+
+                    <!-- Selector de Plataforma / Modo -->
+                    <div class="control-row">
+                        <label>Modo de Ejecución</label>
+                        <select id="launchModeSelect">
+                            <option value="auto" selected>⚡ Automático (Detectar según carpeta CS 1.6 activa)</option>
+                            <option value="nosteam">🛡️ No-Steam / Standalone (Ejecutar hl.exe directamente)</option>
+                            <option value="steam">☁️ Steam Oficial (steam://run/10/)</option>
+                        </select>
+                    </div>
+
+                    <!-- Conexión Rápida a Servidor -->
+                    <div class="control-row">
+                        <label>Conectar Directamente a un Servidor (Opcional)</label>
+                        <input type="text" id="launchServerInput" placeholder="Ej: 190.2.10.45:27015 o cs.servidor.com:27015">
+                        <div class="hint">Si especificas IP:Puerto, el juego se abrirá conectándose automáticamente al servidor.</div>
+                    </div>
+
+                    <div class="grid-2col">
+                        <div class="control-row">
+                            <label>Tasa de Refresco (Hz)</label>
+                            <select id="launchFreq" onchange="updateLaunchArgs()">
+                                <option value="60">60 Hz (Estándar)</option>
+                                <option value="75">75 Hz</option>
+                                <option value="120">120 Hz</option>
+                                <option value="144" selected>144 Hz (Gaming)</option>
+                                <option value="165">165 Hz</option>
+                                <option value="240">240 Hz (Esports Pro)</option>
+                                <option value="360">360 Hz</option>
+                            </select>
+                        </div>
+                        <div class="control-row">
+                            <label>Resolución del Juego</label>
+                            <select id="launchRes" onchange="updateLaunchArgs()">
+                                <option value="800x600">800 × 600 (Competitiva 4:3)</option>
+                                <option value="1024x768" selected>1024 × 768 (Clásica 4:3)</option>
+                                <option value="640x480">640 × 480 (Oldschool CRT)</option>
+                                <option value="1280x960">1280 × 960 (4:3 Alta)</option>
+                                <option value="1920x1080">1920 × 1080 (16:9 Nativa)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid-2col">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="launchNoforce" checked onchange="updateLaunchArgs()">
+                            <span>-noforcemaccel -noforcemparms</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="launchNovid" checked onchange="updateLaunchArgs()">
+                            <span>-novid (Sin intro de Valve)</span>
+                        </label>
+                    </div>
+
+                    <div class="grid-2col">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="launchNojoy" checked onchange="updateLaunchArgs()">
+                            <span>-nojoy (Sin sondeo joystick)</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="launchGl" checked onchange="updateLaunchArgs()">
+                            <span>-gl (Renderizador OpenGL)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-subtitle">Línea de Comandos & Acciones Rápidas</div>
+                    
+                    <div class="launch-args-box" id="launchArgsDisplay">-noforcemaccel -noforcemparms -noforcemspd -freq 144 -gl -32bpp -w 1024 -h 768 -novid -nojoy</div>
+                    
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" onclick="launchGameDirect()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>▶️ LANZAR JUEGO AHORA (STEAM / NO-STEAM)</span>
+                        </button>
+                        <button class="btn-secondary" onclick="fixMasterServers()" title="Restaura la lista de servidores de Internet en No-Steam">
+                            🌐 REPARAR LISTA DE SERVIDORES (MasterServers.vdf)
+                        </button>
+                        <button class="btn-secondary" onclick="copyLaunchArgs()">
+                            📋 Copiar Parámetros al Portapapeles
+                        </button>
+                    </div>
+
+                    <div class="guide-mini-card">
+                        <b>Modos de compatibilidad:</b>
+                        <ul style="padding-left: 18px; margin-top: 6px; font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);">
+                            <li><b style="color:var(--accent-fire);">No-Steam / Standalone:</b> Ejecuta directamente <code>hl.exe -game cstrike</code> en segundo plano sin requerir Steam.</li>
+                            <li><b style="color:var(--accent-cyan);">Steam Oficial:</b> Inyecta los parámetros mediante el protocolo <code>steam://run/10/</code> o desde Propiedades en Steam.</li>
+                            <li><b style="color:var(--accent-gold);">MasterServers.vdf:</b> Restaura servidores activos de Internet si la pestaña "Find Servers" te aparece vacía.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        
+        
+            </div>
+
+            <!-- Subsección 2: Booster & Latencia -->
+            <div class="mod-subpane" id="modpane-lia-booster">
+
+
+            <div class="module-header">
+                <h2>⚡ Optimizador de Latencia & Demonio Booster (Kernel / WinMM)</h2>
+                <p>Ajustes de bajo nivel en el kernel de Windows: resolución del timer fijada a 1.0 ms exactos (1000 Hz), purga de RAM working set, prioridad de proceso ALTA y afinidad de CPU para hl.exe con 0% de uso de CPU en reposo.</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <!-- Columna Izquierda: Control del Demonio y Métricas del Sistema -->
+                <div class="card">
+                    <div class="card-subtitle">Control del Demonio en Segundo Plano</div>
+
+                    <div class="booster-status-banner" id="boosterBanner">
+                        <div class="booster-led" id="boosterLed"></div>
+                        <div style="flex:1;">
+                            <div class="booster-title" id="boosterStatusTitle">Demonio en Reposo (Inactivo)</div>
+                            <div class="booster-desc" id="boosterStatusDesc">Esperando activación o detección de hl.exe...</div>
+                        </div>
+                        <button class="btn-primary" id="boosterToggleBtn" onclick="toggleBoosterDaemon()" style="width:auto; padding:6px 14px;">
+                            ▶️ INICIAR DEMONIO
+                        </button>
+                    </div>
+
+                    <!-- Métricas del Motor y Windows (Pilar 1: Runtime Booster) -->
+                    <div class="booster-metrics-grid" style="margin-top:14px;">
+                        <div class="booster-metric-box">
+                            <span class="m-label">Reloj Kernel (Timer Resolution)</span>
+                            <strong class="m-val" id="boosterTimerVal">15.6 ms (Estándar)</strong>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <button class="btn-secondary mini-btn" id="btnToggleTimer05" onclick="setTimerResolution(0.5)">0.5 ms</button>
+                                <button class="btn-secondary mini-btn" id="btnToggleTimer10" onclick="setTimerResolution(1.0)">1.0 ms</button>
+                                <button class="btn-secondary mini-btn" onclick="restoreSystemTimer()">Auto-Reset</button>
+                            </div>
+                            <span style="font-size:0.68rem; color:#22c55e; margin-top:3px; display:block;">🛡️ Auto-Rollback garantizado con atexit</span>
+                        </div>
+                        <div class="booster-metric-box">
+                            <span class="m-label">Standby List (Memoria en Espera)</span>
+                            <strong class="m-val" id="boosterRamVal">Normal</strong>
+                            <button class="btn-secondary mini-btn" onclick="cleanStandbyMemory()">🧹 Vaciar Standby List</button>
+                            <span style="font-size:0.68rem; color:var(--text-dim); margin-top:3px; display:block;">psapi.EmptyWorkingSet</span>
+                        </div>
+                        <div class="booster-metric-box">
+                            <span class="m-label">Proceso hl.exe (Watchdog)</span>
+                            <strong class="m-val" id="boosterProcessVal">No detectado</strong>
+                            <span class="m-sub" id="boosterPidVal">-</span>
+                        </div>
+                        <div class="booster-metric-box">
+                            <span class="m-label">Prioridad del Proceso</span>
+                            <strong class="m-val" id="boosterPriorityVal">NORMAL</strong>
+                            <span class="m-sub" id="boosterPrioritySub">HIGH_PRIORITY_CLASS al detectar hl.exe</span>
+                        </div>
+                    </div>
+
+                    <!-- Afinidad de CPU Inteligente (Evitar Núcleo 0 y SMT/HyperThreading) -->
+                    <div class="topology-selector-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <strong style="font-size:0.82rem; color:var(--accent-cyan);">🎯 Afinidad de CPU Inteligente (GoldSrc Mononúcleo)</strong>
+                                <p style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+                                    Descarta el <b>Núcleo 0</b> (donde Windows descarga las interrupciones DPC/ISR de red y mouse) y omite hilos SMT virtuales.
+                                </p>
+                            </div>
+                            <span class="version-badge" id="cpuTopologyBadge" style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:0.7rem;">Detectando CPU...</span>
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+                            <span style="font-size:0.75rem; color:#fff;">Núcleo Físico Asignado:</span>
+                            <div id="coreSelectorButtons" style="display:flex; gap:6px;">
+                                <button class="core-pill-btn active" onclick="setBoosterCore(2)">Núcleo Físico 2 (Recomendado)</button>
+                                <button class="core-pill-btn" onclick="setBoosterCore(4)">Núcleo Físico 4</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Registro de Eventos del Demonio -->
+                    <div style="margin-top:14px;">
+                        <label style="font-size:0.78rem; font-weight:700; color:#fff;">Registro del Demonio en Vivo:</label>
+                        <div class="booster-log-terminal" id="boosterLogTerminal">
+                            [00:00:00] Demonio listo para estabilizar reloj y proceso.
+                        </div>
+                    </div>
+
+                    <!-- VBScript Launcher info -->
+                    <div class="hint" style="margin-top:10px;">
+                        💡 <b>Ejecución Invisible:</b> Puedes iniciar el booster sin ventana de consola ejecutando el archivo directo <code>iniciar_booster.vbs</code> ubicado en la raíz del proyecto.
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Optimizador de Red y Registro de Windows -->
+                <div class="card">
+                    <div class="card-subtitle">Optimizador de Red y Registro de Windows (cs_latency_fix.reg)</div>
+
+                    <div class="guide-mini-card" style="margin-bottom:14px;">
+                        <b>Ajustes de Red de Bajo Nivel aplicados:</b>
+                        <ul style="padding-left: 18px; margin-top: 6px; font-size: 0.78rem; line-height: 1.45; color: var(--text-muted);">
+                            <li><b style="color:var(--accent-cyan);">Desactivación de Algoritmo de Nagle:</b> Envía los paquetes de disparo inmediatamente sin esperar a llenar un búfer TCP.</li>
+                            <li><b style="color:var(--accent-gold);">Eliminación de Delayed ACK:</b> Responde al servidor sin el retraso de 200 ms de Windows.</li>
+                            <li><b style="color:var(--accent-fire);">Supresión de NetworkThrottlingIndex:</b> Anula el límite de paquetes por milisegundo de Windows (valor <code>ffffffff</code>).</li>
+                            <li><b style="color:#22c55e);">Prioridad MMCSS para Juegos:</b> Asigna GPU Priority 8 y Scheduling High al subsistema multimedia de Windows.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Previsualización del Registro -->
+                    <div class="control-row">
+                        <label>Contenido del Archivo de Registro (cs_latency_fix.reg):</label>
+                        <pre class="code-editor" style="height:170px; font-size:0.75rem;" readonly>Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile]
+"NetworkThrottlingIndex"=dword:ffffffff
+"SystemResponsiveness"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games]
+"GPU Priority"=dword:00000008
+"Priority"=dword:00000006
+"Scheduling Category"="High"
+"SFIO Priority"="High"
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters]
+"TcpAckFrequency"=dword:00000001
+"TCPNoDelay"=dword:00000001</pre>
+                    </div>
+
+                    <div class="action-buttons-group" style="margin-top:14px;">
+                        <button class="btn-primary" onclick="applyWindowsRegistryFix()">
+                            ⚡ APLICAR AJUSTES AL REGISTRO DE WINDOWS AHORA
+                        </button>
+                        <a href="/api/booster/download_reg" class="btn-secondary" style="text-align:center; text-decoration:none; display:inline-block;" download="cs_latency_fix.reg">
+                            📥 Descargar cs_latency_fix.reg
+                        </a>
+                    </div>
+                </div>
+            </div>
+        
+            </div>
+
+            <!-- Subsección 3: Monitor de Servidores A2S & RCON Nativo (Pilar 4) -->
+            <div class="mod-subpane" id="modpane-lia-server-monitor">
+
+            <div class="module-header">
+                <h2>🌐 Monitor de Servidores A2S & Mini-Consola RCON (UDP Puro)</h2>
+                <p>Protocolo nativo de Valve <code>A2S_INFO</code> (Header 0x54) con respuesta a desafío 0x41 sin dependencias externas. Monitorea ping en tiempo real, mapa, jugadores y envía comandos administrativos por RCON.</p>
+            </div>
+
+            <div class="grid-2col-layout">
+                <!-- Columna 1: Consulta A2S_INFO -->
+                <div class="card">
+                    <div class="card-subtitle">📡 Consulta de Servidor GoldSrc (A2S_INFO)</div>
+                    <div class="grid-2col" style="margin-bottom: 12px;">
+                        <div>
+                            <label>Host o IP del Servidor</label>
+                            <input type="text" id="a2sHostInput" value="127.0.0.1" placeholder="Ej: 190.2.10.45 o localhost">
+                        </div>
+                        <div>
+                            <label>Puerto UDP</label>
+                            <input type="number" id="a2sPortInput" value="27015">
+                        </div>
+                    </div>
+
+                    <div class="action-buttons-group">
+                        <button class="btn-primary" onclick="queryA2SServer()">
+                            📡 CONSULTAR ESTADO (A2S)
+                        </button>
+                    </div>
+
+                    <!-- Panel de Información del Servidor -->
+                    <div class="server-query-display" id="a2sDisplayPanel" style="display:none;">
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Nombre del Servidor:</span>
+                            <strong id="a2sServerName" style="color:#fff; text-align:right;">-</strong>
+                        </div>
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Mapa Actual:</span>
+                            <span class="version-badge" id="a2sMapName" style="background:#f5a623; color:#06090f; font-weight:800;">-</span>
+                        </div>
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Jugadores Conectados:</span>
+                            <strong id="a2sPlayersCount" style="color:#38bdf8;">0 / 32</strong>
+                        </div>
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Latencia RTT (Ping):</span>
+                            <span class="server-ping-badge ping-fast" id="a2sPingBadge">0.0 ms</span>
+                        </div>
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Seguridad / VAC:</span>
+                            <span id="a2sVacStatus" style="color:#22c55e; font-weight:700;">Protegido por VAC</span>
+                        </div>
+                        <div class="server-info-row">
+                            <span style="color:var(--text-muted);">Tipo & Sistema Operativo:</span>
+                            <span id="a2sOsType" style="color:var(--text-light);">-</span>
+                        </div>
+
+                        <button class="btn-primary" id="a2sConnectBtn" onclick="connectToA2SServer()" style="margin-top:14px; width:100%;">
+                            🎮 CONECTARSE A ESTE SERVIDOR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Mini-Consola RCON -->
+                <div class="card">
+                    <div class="card-subtitle">💻 Mini-Consola RCON (Administración Remota UDP)</div>
+                    <div class="grid-2col" style="margin-bottom: 10px;">
+                        <div>
+                            <label>Contraseña RCON</label>
+                            <input type="password" id="rconPasswordInput" placeholder="rcon_password">
+                        </div>
+                        <div>
+                            <label>Comando RCON</label>
+                            <input type="text" id="rconCommandInput" value="status" placeholder="status, changelevel, etc.">
+                        </div>
+                    </div>
+
+                    <div class="action-buttons-group" style="margin-bottom: 12px;">
+                        <button class="btn-secondary" onclick="sendRconCommand()">
+                            🚀 EJECUTAR COMANDO RCON
+                        </button>
+                    </div>
+
+                    <label style="font-size:0.75rem; color:var(--text-muted);">Salida de Consola RCON:</label>
+                    <div class="rcon-console-terminal" id="rconTerminalOutput">[RCON] Listo para enviar comandos remotos vía protocolo UDP GoldSrc.</div>
+                </div>
+            </div>
+
+            </div>
+
+            <!-- Subsección 3: AI Coach & Telemetría -->
+            <div class="mod-subpane" id="modpane-lia-telemetry">
+
+
+            <div class="module-header">
+                <h2>🧠 AI Tactical Coach & Motor de Telemetría (Zero-Ban / VAC-Safe)</h2>
+                <p>Captura de rendimiento competitivo en tiempo real sin inyección de DLLs (mediante <code>console_telemetry.log</code> y <code>mp_logdetail 3</code>). Análisis de KAST, ADR, Duelos de apertura, Heatmap de impactos anatómicos y Diagnóstico de Hábitos con rutinas de práctica en 1 clic.</p>
+            </div>
+
+            <!-- BARRA DE MÉTRICAS COMPETITIVAS RIBBON -->
+            <div class="telemetry-metrics-ribbon">
+                <div class="t-stat-card combat-card">
+                    <span class="t-stat-lbl">Combat Score</span>
+                    <strong class="t-stat-val highlight" id="tCombatScore">0</strong>
+                    <span class="t-stat-sub">Rendimiento Global</span>
+                </div>
+                <div class="t-stat-card">
+                    <span class="t-stat-lbl">K/D Ratio</span>
+                    <strong class="t-stat-val" id="tKdRatio">0.00</strong>
+                    <span class="t-stat-sub" id="tKillsDeaths">0 K / 0 D</span>
+                </div>
+                <div class="t-stat-card">
+                    <span class="t-stat-lbl">Headshot %</span>
+                    <strong class="t-stat-val" id="tHsPct">0.0%</strong>
+                    <span class="t-stat-sub" id="tHsCount">0 Headshots</span>
+                </div>
+                <div class="t-stat-card">
+                    <span class="t-stat-lbl">ADR (Daño/Ronda)</span>
+                    <strong class="t-stat-val" id="tAdr">0.0</strong>
+                    <span class="t-stat-sub" id="tTotalDmg">0 Daño Total</span>
+                </div>
+                <div class="t-stat-card">
+                    <span class="t-stat-lbl">KAST %</span>
+                    <strong class="t-stat-val" id="tKastPct">0.0%</strong>
+                    <span class="t-stat-sub">Consistencia Ronda</span>
+                </div>
+                <div class="t-stat-card">
+                    <span class="t-stat-lbl">Duelos Apertura</span>
+                    <strong class="t-stat-val" id="tOpeningWinrate">0.0%</strong>
+                    <span class="t-stat-sub" id="tOpeningCount">0 Gan / 0 Per</span>
+                </div>
+            </div>
+
+            <div class="grid-2col-layout" style="margin-top:16px;">
+                <!-- Columna Izquierda: Radar de Habilidades & Heatmap Anatómico -->
+                <div class="card">
+                    <div class="card-subtitle">Análisis Visual de Desempeño</div>
+
+                    <div class="subtabs-bar">
+                        <button class="subtab-btn active" data-subtab="telemetry-radar">Radar 5 Ejes</button>
+                        <button class="subtab-btn" data-subtab="telemetry-body">Heatmap Anatómico</button>
+                        <button class="subtab-btn" data-subtab="telemetry-timeline">Historial Rondas</button>
+                    </div>
+
+                    <!-- Vista 1: Spider / Radar Chart (5 Ejes) -->
+                    <div class="subtab-pane active" id="subpane-telemetry-radar">
+                        <div class="radar-canvas-wrapper" style="text-align:center; padding:10px 0;">
+                            <canvas id="skillsRadarCanvas" width="340" height="300"></canvas>
+                        </div>
+                        <div class="radar-axes-legend">
+                            <div><span class="legend-dot" style="background:#f5a623;"></span> Puntería: <b id="rAimVal">0</b></div>
+                            <div><span class="legend-dot" style="background:#22c55e;"></span> Supervivencia: <b id="rSurvVal">0</b></div>
+                            <div><span class="legend-dot" style="background:#38bdf8;"></span> Utilidad: <b id="rUtilVal">0</b></div>
+                            <div><span class="legend-dot" style="background:#c084fc;"></span> Economía: <b id="rEconVal">0</b></div>
+                            <div><span class="legend-dot" style="background:#ff6a00;"></span> Posición: <b id="rPosVal">0</b></div>
+                        </div>
+                    </div>
+
+                    <!-- Vista 2: Heatmap Anatómico de Impactos (Silueta) -->
+                    <div class="subtab-pane" id="subpane-telemetry-body">
+                        <div class="hitmap-flex-container">
+                            <div class="hitmap-col">
+                                <span class="hitmap-col-title" style="color:var(--accent-gold);">Impactos Acertados (Daño Infligido)</span>
+                                <div class="human-silhouette-box" id="silhouetteGiven">
+                                    <div class="hit-zone head" id="zgHead" title="Cabeza">Cabeza: <span id="zgHeadVal">0</span></div>
+                                    <div class="hit-zone chest" id="zgChest" title="Pecho">Pecho: <span id="zgChestVal">0</span></div>
+                                    <div class="hit-zone stomach" id="zgStomach" title="Estómago">Estómago: <span id="zgStomachVal">0</span></div>
+                                    <div class="hit-zone arms" id="zgArms" title="Brazos">Brazos: <span id="zgArmsVal">0</span></div>
+                                    <div class="hit-zone legs" id="zgLegs" title="Piernas">Piernas: <span id="zgLegsVal">0</span></div>
+                                </div>
+                            </div>
+                            <div class="hitmap-col">
+                                <span class="hitmap-col-title" style="color:#ef4444;">Impactos Recibidos (Daño Tomado)</span>
+                                <div class="human-silhouette-box" id="silhouetteTaken">
+                                    <div class="hit-zone head taken" id="ztHead" title="Cabeza Recibida">Cabeza: <span id="ztHeadVal">0</span></div>
+                                    <div class="hit-zone chest taken" id="ztChest" title="Pecho Recibido">Pecho: <span id="ztChestVal">0</span></div>
+                                    <div class="hit-zone stomach taken" id="ztStomach" title="Estómago Recibido">Estómago: <span id="ztStomachVal">0</span></div>
+                                    <div class="hit-zone arms taken" id="ztArms" title="Brazos Recibidos">Brazos: <span id="ztArmsVal">0</span></div>
+                                    <div class="hit-zone legs taken" id="ztLegs" title="Piernas Recibidas">Piernas: <span id="ztLegsVal">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista 3: Historial Ronda por Ronda -->
+                    <div class="subtab-pane" id="subpane-telemetry-timeline">
+                        <div class="round-history-list" id="roundHistoryList">
+                            <div style="text-align:center; color:var(--text-muted); padding:20px; font-size:0.8rem;">
+                                Inicia o conecta una partida con telemetría activa para ver el desglose ronda por ronda.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones Rápidas de Telemetría -->
+                    <div class="action-buttons-group" style="margin-top:16px;">
+                        <button class="btn-primary" onclick="activateTelemetryLogging()">
+                            ⚡ ACTIVAR TELEMETRÍA EN CSTRIKE/USERCONFIG.CFG
+                        </button>
+                        <button class="btn-secondary" onclick="resetTelemetrySession()">
+                            🔄 Reiniciar Estadísticas
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Diagnóstico Inteligente de la IA & Rutinas -->
+                <div class="card">
+                    <div class="card-subtitle">Diagnóstico del Coach Táctico & Rutinas</div>
+
+                    <!-- Lista de Tarjetas de Diagnóstico -->
+                    <div class="coach-diagnoses-list" id="coachDiagnosesList">
+                        <div style="text-align:center; color:var(--text-muted); padding:25px; font-size:0.82rem;">
+                            Cargando diagnóstico del Coach...
+                        </div>
+                    </div>
+
+                    <!-- Catálogo de Rutinas de Práctica Recomendadas -->
+                    <div style="margin-top:16px;">
+                        <label style="font-size:0.82rem; font-weight:700; color:#fff;">🏋️ Rutinas de Entrenamiento Prescritas:</label>
+                        <div class="routines-grid" id="routinesGrid" style="margin-top:8px;">
+                            <!-- Generado dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        
+            </div>
+        </section>
+
+<section class="tab-pane" id="tab-snapshots">
+
+            <div class="module-header">
+                <h2>🛡️ Historial de Snapshots y Rollback Total</h2>
+                <p>Cada vez que instalas un spray, audio, modelo o menú, el estudio crea un respaldo previo. Si algo no te gusta o el juego falla, puedes revertir cualquier archivo individual o restaurar todo con un clic.</p>
+            </div>
+
+            <div class="card">
+                <div class="snapshots-header-row">
+                    <div class="card-subtitle">Respaldos Almacenados en <code>cstrike/backup_studio/</code></div>
+                    <button class="btn-danger" onclick="rollbackAllSnapshots()">
+                        ⏪ REVERTIR TODO AL ESTADO ANTERIOR
+                    </button>
+                </div>
+
+                <div class="table-wrapper" style="margin-top: 14px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Acción Realizada</th>
+                                <th>Archivo en cstrike/</th>
+                                <th>Tamaño Original</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="snapshotsTableBody">
+                            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Cargando historial de respaldos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+        </section>
+    </main>
+
+<!-- MODAL DE CAMBIO DE RUTA CSTRIKE -->
+    <div class="modal-backdrop" id="pathModal">
+        <div class="modal-card">
+            <div class="modal-title">
+                <h3>Conexión con Directorio de Counter-Strike 1.6</h3>
+                <button class="modal-close" onclick="closePathModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+                    El estudio detecta automáticamente instalaciones de Steam y No-Steam. Puedes seleccionar una ruta encontrada o ingresar una personalizada.
+                </p>
+
+                <div class="control-row">
+                    <label>Rutas Detectadas en tu Sistema:</label>
+                    <div class="candidates-list" id="candidatesList"></div>
+                </div>
+
+                <div class="control-row" style="margin-top:14px;">
+                    <label>O ingresa la ruta manual a tu carpeta cstrike/:</label>
+                    <input type="text" id="manualPathInput" placeholder="D:\SteamLibrary\steamapps\common\Half-Life\cstrike">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closePathModal()">Cancelar</button>
+                <button class="btn-primary" onclick="saveManualPath()">Guardar y Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TÁCTICO DE ASIGNACIÓN DE COMPRA EN NUMPAD -->
+    <div class="modal-backdrop" id="buyBindsModal">
+        <div class="modal-card" style="max-width: 720px;">
+            <div class="modal-title">
+                <div>
+                    <h3 id="buyBindsModalTitle">Configurar Tecla Numpad</h3>
+                    <span style="font-size:0.75rem; color:var(--text-muted);" id="buyBindsModalSubtitle">Selecciona armas o presets para vincular</span>
+                </div>
+                <button class="modal-close" onclick="closeBuyBindModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <!-- Cadena de Comandos Actual -->
+                <div class="control-row">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label>Secuencia de Compra Asignada:</label>
+                        <span id="buyBindTotalCost" style="font-size:0.82rem; font-weight:800; color:var(--accent-gold);">Costo Estimado: $0</span>
+                    </div>
+                    <div class="buybind-chain-box" id="buyBindChainDisplay">
+                        <span style="color:var(--text-muted); font-size:0.78rem;">Ninguna arma seleccionada. Haz clic en las armas abajo o escribe el comando.</span>
+                    </div>
+                    <input type="text" id="buyBindRawInput" placeholder="Ej: ak47; m4a1; vesthelm; defuser;" style="margin-top:6px;" oninput="syncBuyBindRawInput(this.value)">
+                </div>
+
+                <!-- Presets Rápidos de Combos -->
+                <div style="margin-top: 14px;">
+                    <label style="font-size:0.78rem; font-weight:700; color:#ffffff;">⚡ Combos Rápidos Esports:</label>
+                    <div class="quick-presets-row" style="margin-top:6px;">
+                        <button class="preset-btn" onclick="applyPresetToModal('ak47; primammo; vesthelm; hegren; flash; flash; sgren;')">💥 Full Rifle T ($4300)</button>
+                        <button class="preset-btn" onclick="applyPresetToModal('m4a1; primammo; vesthelm; defuser; hegren; flash; flash; sgren;')">🛡️ Full Rifle CT ($5100)</button>
+                        <button class="preset-btn" onclick="applyPresetToModal('awp; primammo; deagle; secammo; vesthelm; flash; flash;')">🎯 AWP Sniper ($6800)</button>
+                        <button class="preset-btn" onclick="applyPresetToModal('deagle; secammo; vest;')">💵 Eco Deagle ($1300)</button>
+                        <button class="preset-btn" onclick="applyPresetToModal('hegren; flash; flash; sgren;')">💣 4 Granadas ($1000)</button>
+                        <button class="preset-btn" onclick="applyPresetToModal('vesthelm; defuser;')">🛡️ Chaleco + Kit ($1200)</button>
+                        <button class="preset-btn danger" onclick="clearModalBindChain()">🧹 Limpiar</button>
+                    </div>
+                </div>
+
+                <!-- Selector de Armas por Categorías -->
+                <div style="margin-top: 16px;">
+                    <div class="weapon-filter-tabs">
+                        <button class="cat-pill active" onclick="filterModalWeapons('all', this)">🌟 Todas</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('rifles', this)">🎯 Rifles</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('pistols', this)">🔫 Pistolas</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('smg', this)">⚡ SMG</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('heavy', this)">💥 Escopetas / M249</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('equipment', this)">🛡️ Equipamiento</button>
+                        <button class="cat-pill" onclick="filterModalWeapons('ammo', this)">📦 Munición</button>
+                    </div>
+
+                    <div class="modal-weapons-grid" id="modalWeaponsGrid">
+                        <!-- Rellenado dinámicamente con armas interactivas -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeBuyBindModal()">Cancelar</button>
+                <button class="btn-primary" onclick="saveBuyBindModal()">💾 Guardar en Tecla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICACIONES -->
+    <div class="toast" id="toast"></div>
+
+    <!-- PANTALLA DE CARGA TÁCTICA (LOADING OVERLAY CS 1.6 GOLD AK-47) -->
+    <div id="tacticalLoadingOverlay" class="tactical-loading-overlay" style="display: none;">
+        <div class="loading-backdrop"></div>
+        <div class="loading-modal-card">
+            <!-- Botón de cancelar/cerrar si fuera necesario -->
+            <button class="loading-dismiss-btn" onclick="LoadingOverlay.hide(0)" title="Cerrar overlay">&times;</button>
+
+            <!-- CONTENEDOR DEL EMBLEMA DORADO Y RADAR -->
+            <div class="emblem-tactical-stage">
+                <!-- Anillo Exterior de Radar Giratorio con Ticks de Mira y Retícula -->
+                <div class="radar-outer-wrapper">
+                    <svg class="radar-svg-ring" viewBox="0 0 320 320">
+                        <circle class="radar-circle-base" cx="160" cy="160" r="148" />
+                        <circle class="radar-circle-ticked" cx="160" cy="160" r="136" />
+                        <circle class="radar-circle-inner-pulse" cx="160" cy="160" r="120" />
+                        <circle class="radar-circle-core" cx="160" cy="160" r="75" />
+
+                        <!-- Marcas de mira cardinales (Crosshair Ticks) -->
+                        <line x1="160" y1="2" x2="160" y2="22" class="reticle-tick cardinal" />
+                        <line x1="160" y1="298" x2="160" y2="318" class="reticle-tick cardinal" />
+                        <line x1="2" y1="160" x2="22" y2="160" class="reticle-tick cardinal" />
+                        <line x1="298" y1="160" x2="318" y2="160" class="reticle-tick cardinal" />
+
+                        <!-- Ticks sub-angulares a 45 grados -->
+                        <line x1="48" y1="48" x2="62" y2="62" class="reticle-tick" />
+                        <line x1="272" y1="48" x2="258" y2="62" class="reticle-tick" />
+                        <line x1="48" y1="272" x2="62" y2="258" class="reticle-tick" />
+                        <line x1="272" y1="272" x2="258" y2="258" class="reticle-tick" />
+                    </svg>
+
+                    <!-- Haz de barrido radar continuo -->
+                    <div class="radar-beam-sweep"></div>
+                </div>
+
+                <!-- EMBLEMA CENTRAL: ANILLO Y RIFLE AK-47 DORADO EN RELIEVE METÁLICO 3D -->
+                <div class="gold-emblem-badge">
+                    <svg class="ak47-svg-emblem" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <!-- Gradientes de Oro Realista (Reflejos y Sombras Biseladas) -->
+                            <linearGradient id="goldRimGradient" x1="15%" y1="0%" x2="85%" y2="100%">
+                                <stop offset="0%" stop-color="#fff8db" />
+                                <stop offset="25%" stop-color="#f5cc38" />
+                                <stop offset="50%" stop-color="#d49e14" />
+                                <stop offset="75%" stop-color="#ffe680" />
+                                <stop offset="90%" stop-color="#8a6105" />
+                                <stop offset="100%" stop-color="#4d3500" />
+                            </linearGradient>
+
+                            <linearGradient id="goldSpecularTop" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" />
+                                <stop offset="35%" stop-color="#fff0a6" />
+                                <stop offset="70%" stop-color="#e0a519" />
+                                <stop offset="100%" stop-color="#734d00" />
+                            </linearGradient>
+
+                            <linearGradient id="goldBodyGradient" x1="0%" y1="20%" x2="100%" y2="80%">
+                                <stop offset="0%" stop-color="#fff2a8" />
+                                <stop offset="30%" stop-color="#f0bd24" />
+                                <stop offset="60%" stop-color="#c98e0c" />
+                                <stop offset="85%" stop-color="#fadb60" />
+                                <stop offset="100%" stop-color="#664400" />
+                            </linearGradient>
+
+                            <linearGradient id="goldDarkFacet" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#996c05" />
+                                <stop offset="60%" stop-color="#543b00" />
+                                <stop offset="100%" stop-color="#3b2900" />
+                            </linearGradient>
+
+                            <radialGradient id="pedestalDark" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#141822" />
+                                <stop offset="75%" stop-color="#090b10" />
+                                <stop offset="100%" stop-color="#05070a" />
+                            </radialGradient>
+
+                            <!-- Filtro de resplandor dorado metálico -->
+                            <filter id="goldShineDrop" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="rgba(245, 166, 35, 0.65)" />
+                                <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(255, 240, 180, 0.4)" />
+                            </filter>
+                        </defs>
+
+                        <!-- Fondo del pedestal del anillo -->
+                        <circle cx="160" cy="100" r="50" fill="url(#pedestalDark)" stroke="#1a202c" stroke-width="2" />
+
+                        <!-- Anillo Dorado Biselado 3D -->
+                        <circle cx="160" cy="100" r="50" fill="none" stroke="url(#goldRimGradient)" stroke-width="11" filter="url(#goldShineDrop)" />
+                        <!-- Anillo de brillo interno y filo externo -->
+                        <circle cx="160" cy="100" r="44.5" fill="none" stroke="#fff5b8" stroke-width="1" opacity="0.65" />
+                        <circle cx="160" cy="100" r="55.5" fill="none" stroke="#543a02" stroke-width="1" opacity="0.85" />
+
+                        <!-- RIFLE AK-47 DORADO EN RELIEVE -->
+                        <g class="ak47-gold-vector" filter="url(#goldShineDrop)">
+                            <!-- 1. Culata (Stock) con facetas biseladas 3D -->
+                            <!-- Faceta inferior oscura -->
+                            <polygon points="50,105 50,128 78,124 116,115 116,108 78,111" fill="url(#goldDarkFacet)" stroke="#4d3500" stroke-width="0.5" />
+                            <!-- Faceta media dorada -->
+                            <polygon points="50,105 78,111 116,108 116,100 78,100 50,105" fill="url(#goldBodyGradient)" stroke="#4d3500" stroke-width="0.5" />
+                            <!-- Faceta superior con reflejo blanco/oro -->
+                            <polygon points="50,105 78,100 116,100 78,103 50,106" fill="url(#goldSpecularTop)" />
+                            <!-- Cantonera trasera -->
+                            <polygon points="48,103 52,104 52,129 48,128" fill="url(#goldSpecularTop)" />
+
+                            <!-- 2. Cajón de Mecanismos (Receiver) -->
+                            <!-- Cuerpo base -->
+                            <polygon points="116,100 178,100 178,116 116,116" fill="url(#goldBodyGradient)" stroke="#4d3500" stroke-width="0.5" />
+                            <!-- Tapa del cajón biselada (Dust cover) -->
+                            <polygon points="116,100 178,100 174,105 118,105" fill="url(#goldSpecularTop)" />
+                            <!-- Parte inferior del recibidor -->
+                            <polygon points="116,112 178,112 178,116 116,116" fill="url(#goldDarkFacet)" />
+                            <!-- Ventana de expulsión y palanca de armado -->
+                            <rect x="136" y="103" width="16" height="4" rx="1" fill="#fff7cc" />
+                            <polygon points="144,103 148,99 152,103" fill="url(#goldSpecularTop)" />
+
+                            <!-- 3. Empuñadura de Pistola (Pistol Grip) -->
+                            <polygon points="122,116 112,144 125,147 132,116" fill="url(#goldDarkFacet)" stroke="#4d3500" stroke-width="0.5" />
+                            <polygon points="122,116 128,116 121,146 117,145" fill="url(#goldSpecularTop)" />
+
+                            <!-- 4. Guardamonte y Gatillo -->
+                            <path d="M 134,116 C 134,124 140,126 148,116" fill="none" stroke="url(#goldSpecularTop)" stroke-width="1.8" />
+                            <polygon points="140,117 138,122 141,122" fill="#fff8db" />
+
+                            <!-- 5. Cargador Curvo Táctico (Banana Magazine) -->
+                            <!-- Cruza y resalta sobre el borde inferior del anillo dorado -->
+                            <!-- Cuerpo oscuro de sombra -->
+                            <path d="M 148,116 L 158,116 C 164,136 172,154 184,166 L 171,170 C 158,156 150,136 148,116 Z" fill="url(#goldDarkFacet)" stroke="#4d3500" stroke-width="0.5" />
+                            <!-- Faceta central reflectante -->
+                            <path d="M 152,116 L 158,116 C 164,136 172,154 184,166 L 178,168 C 168,155 160,136 156,116 Z" fill="url(#goldBodyGradient)" />
+                            <!-- Nervadura y brillo especular del cargador -->
+                            <path d="M 155,116 C 161,135 168,152 178,165" fill="none" stroke="url(#goldSpecularTop)" stroke-width="2" />
+                            <!-- Tapa base del cargador -->
+                            <polygon points="171,170 184,166 186,169 173,173" fill="url(#goldSpecularTop)" />
+
+                            <!-- 6. Guardamanos y Tubo de Gases (Handguard / Gas Tube) -->
+                            <polygon points="178,99 220,99 220,114 178,114" fill="url(#goldBodyGradient)" stroke="#4d3500" stroke-width="0.5" />
+                            <polygon points="178,99 220,99 217,104 180,104" fill="url(#goldSpecularTop)" />
+                            <polygon points="178,109 220,109 220,114 178,114" fill="url(#goldDarkFacet)" />
+                            <!-- Ranuras de ventilación -->
+                            <line x1="188" y1="102" x2="210" y2="102" stroke="#543b00" stroke-width="1.2" />
+
+                            <!-- 7. Bloque de Gases (Gas Block) -->
+                            <polygon points="220,97 232,97 231,108 220,108" fill="url(#goldSpecularTop)" stroke="#4d3500" stroke-width="0.5" />
+
+                            <!-- 8. Cañón (Barrel) -->
+                            <rect x="220" y="103" width="46" height="5" fill="url(#goldBodyGradient)" />
+                            <rect x="220" y="103" width="46" height="1.8" fill="url(#goldSpecularTop)" />
+
+                            <!-- 9. Punto de Mira Delantero (Front Sight Post) -->
+                            <polygon points="256,103 257,93 263,93 264,103" fill="url(#goldSpecularTop)" stroke="#4d3500" stroke-width="0.5" />
+                            <line x1="260" y1="91" x2="260" y2="95" stroke="#ffffff" stroke-width="1.5" />
+
+                            <!-- 10. Bocacha Compensadora Táctico (Muzzle Brake) -->
+                            <polygon points="266,102 276,101 276,110 266,109" fill="url(#goldSpecularTop)" stroke="#4d3500" stroke-width="0.5" />
+                        </g>
+                    </svg>
+
+                    <!-- Destello Metálico Continuo (Gold Shimmer Sweep) -->
+                    <div class="gold-shimmer-sweep"></div>
+                </div>
+            </div>
+
+            <!-- TÍTULOS Y ESTADO DE LA OPERACIÓN -->
+            <div class="loading-info-block">
+                <h3 class="loading-main-title" id="loadingTitle">PROCESANDO OPERACIÓN TÁCTICA</h3>
+                <p class="loading-sub-step" id="loadingStep">Inicializando motor de renderizado GoldSrc...</p>
+            </div>
+
+            <!-- BARRA DE PROGRESO CALIBRADA -->
+            <div class="loading-progress-container">
+                <div class="progress-bar-track">
+                    <div class="progress-bar-glow-fill" id="loadingProgressFill" style="width: 0%;">
+                        <div class="progress-glow-head"></div>
+                    </div>
+                </div>
+                <div class="progress-metrics-row">
+                    <span class="progress-percent-label" id="loadingProgressPercent">0%</span>
+                    <span class="progress-engine-tag" id="loadingEngineTag">GOLDRSC ENGINE • 11.200 PX MAX</span>
+                </div>
+                <div class="progress-detail-ticker" id="loadingDetailText">
+                    [STATUS: ACTIVO] • [CALIBRACIÓN BINARIA WAD3]
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CRÉDITOS OFICIALES DEL PROYECTO -->
+    <div class="modal-overlay" id="creditsModal" style="display:none;" onclick="if(event.target===this) closeCreditsModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:1.8rem; filter:drop-shadow(0 0 8px rgba(245,166,35,0.6));">👑</span>
+                    <div>
+                        <h3 style="font-family:var(--font-tactical, 'Chakra Petch'); color:#fff; text-transform:uppercase; letter-spacing:1px; margin:0; font-size:1.2rem;">Créditos del Proyecto</h3>
+                        <div style="font-size:0.8rem; color:var(--accent-gold); font-weight:700; letter-spacing:0.5px;">CS 1.6 MODDING, TUNING & AUDIO STUDIO PRO v4.0</div>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeCreditsModal()" title="Cerrar modal">✕</button>
+            </div>
+            
+            <div class="modal-body" style="padding:22px 24px;">
+                <!-- LEAD DEVELOPER CARD -->
+                <div class="credits-lead-card">
+                    <div>
+                        <span style="display:inline-block; font-size:0.75rem; color:var(--accent-gold); font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Desarrollador Principal & Creador</span>
+                        <div style="font-size:1.3rem; font-weight:700; color:#ffffff; font-family:var(--font-tactical, 'Chakra Petch');">Edu Andrada</div>
+                        <div style="font-size:0.82rem; color:var(--text-muted); font-family:monospace;">@eduandrada</div>
+                    </div>
+                    <a href="https://github.com/eduandrada/csstudiopro.git" target="_blank" rel="noopener noreferrer" class="credits-badge-link">
+                        <span>📦</span> GitHub Repo
+                    </a>
+                </div>
+
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px; line-height:1.5;">
+                    Equipo multidisciplinario de modding, arquitectura de software, acústica y ciberseguridad:
+                </p>
+
+                <!-- GRID DE COLABORADORES -->
+                <div class="credits-team-grid">
+                    <div class="credits-member-card">
+                        <div style="font-size:1.6rem;">🎖️</div>
+                        <div>
+                            <strong style="color:#fff; font-size:1rem; display:block;">yuyito</strong>
+                            <span style="color:var(--accent-gold); font-size:0.75rem; text-transform:uppercase; font-weight:700;">Dirección & Arquitectura</span>
+                        </div>
+                    </div>
+
+                    <div class="credits-member-card">
+                        <div style="font-size:1.6rem;">🛡️</div>
+                        <div>
+                            <strong style="color:#fff; font-size:1rem; display:block;">Hidden /A/</strong>
+                            <span style="color:var(--accent-gold); font-size:0.75rem; text-transform:uppercase; font-weight:700;">Sistemas & Seguridad</span>
+                        </div>
+                    </div>
+
+                    <div class="credits-member-card">
+                        <div style="font-size:1.6rem;">🎨</div>
+                        <div>
+                            <strong style="color:#fff; font-size:1rem; display:block;">KYAMI</strong>
+                            <span style="color:var(--accent-gold); font-size:0.75rem; text-transform:uppercase; font-weight:700;">UI/UX Táctica & Shaders</span>
+                        </div>
+                    </div>
+
+                    <div class="credits-member-card">
+                        <div style="font-size:1.6rem;">⚡</div>
+                        <div>
+                            <strong style="color:#fff; font-size:1rem; display:block;">vANS</strong>
+                            <span style="color:var(--accent-gold); font-size:0.75rem; text-transform:uppercase; font-weight:700;">Motor Acústico & Netcode</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENLACES OFICIALES Y DESPLIEGUE EN VIVO -->
+                <div class="credits-links-box">
+                    <div class="credits-link-row">
+                        <div>
+                            <strong style="color:#fff;">Repositorio Oficial:</strong>
+                            <div style="color:var(--text-dim); font-size:0.78rem;">Código fuente y lanzadores oficiales</div>
+                        </div>
+                        <a href="https://github.com/eduandrada/csstudiopro.git" target="_blank" rel="noopener noreferrer" class="credits-badge-link">
+                            github.com/eduandrada/csstudiopro ↗
+                        </a>
+                    </div>
+
+                    <div class="credits-link-row">
+                        <div>
+                            <strong style="color:#fff;">Despliegue en la Nube (Render):</strong>
+                            <div style="color:var(--text-dim); font-size:0.78rem;">Servicio: <code style="color:var(--accent-gold); font-family:monospace;">srv-dass8sfpn0mc739qp790</code></div>
+                        </div>
+                        <a href="https://csstudiopro.onrender.com" target="_blank" rel="noopener noreferrer" class="credits-badge-link" style="border-color:rgba(56,189,248,0.4); color:#38bdf8; background:rgba(56,189,248,0.12);">
+                            csstudiopro.onrender.com ↗
+                        </a>
+                    </div>
+                </div>
+
+                <div style="padding:10px 14px; background:rgba(0,0,0,0.3); border-radius:6px; font-size:0.78rem; color:var(--text-dim); text-align:center; border:1px dashed rgba(255,255,255,0.1);">
+                    Plataforma de alta precisión para Counter-Strike 1.6 (GoldSrc). Compatible con Steam y No-Steam (WinAPI 0.5ms Timer / SMT-Aware).
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding:14px 24px; text-align:right; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.2);">
+                <button class="btn-primary" onclick="closeCreditsModal()" style="padding:9px 26px; font-family:var(--font-tactical); font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/static/js/app.js?v=2.4"></script>
+</body>
+</html>
