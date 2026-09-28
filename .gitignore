@@ -8,13 +8,9 @@ __pycache__/
 build/
 dist/
 Output_Installer/
-*.spec
 *.zip
 
-# Entorno y Secretos locales
-.env
-.env.local
-*.log
+# Datos locales temporales y logs
 logs/
 data/
 
